@@ -73,17 +73,17 @@ use deprecated option `--enable-all` and a new linter is added or even without `
 
 It's highly recommended to install a specific version of golangci-lint available on the [releases page](https://github.com/golangci/golangci-lint/releases).
 
-Here is the recommended way to install golangci-lint v1.22.1:
+Here is the recommended way to install golangci-lint v1.23.0:
 
 ```bash
 # binary will be $(go env GOPATH)/bin/golangci-lint
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.22.1
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.0
 
 # or install it into ./bin/
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.22.1
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.23.0
 
 # In alpine linux (as it does not come with curl by default)
-wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.22.1
+wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.23.0
 
 golangci-lint --version
 ```
@@ -103,7 +103,7 @@ brew upgrade golangci/tap/golangci-lint
 ### Docker
 
 ```bash
-docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.22.1 golangci-lint run -v
+docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.23.0 golangci-lint run -v
 ```
 
 ### Go
@@ -221,6 +221,7 @@ gofmt: Gofmt checks whether code was gofmt-ed. By default this tool runs with -s
 goimports: Goimports does everything that gofmt does. Additionally it checks unused imports [fast: true, auto-fix: true]
 golint: Golint differs from gofmt. Gofmt reformats Go source code, whereas golint prints out style mistakes [fast: true, auto-fix: false]
 gomnd: An analyzer to detect magic numbers. [fast: true, auto-fix: false]
+goprintffuncname: Checks that printf-like functions are named with `f` at the end [fast: true, auto-fix: false]
 gosec (gas): Inspects source code for security problems [fast: true, auto-fix: false]
 interfacer: Linter that suggests narrower interface types [fast: true, auto-fix: false]
 lll: Reports long lines [fast: true, auto-fix: false]
@@ -228,6 +229,7 @@ maligned: Tool to detect Go structs that would take less memory if their fields 
 misspell: Finds commonly misspelled English words in comments [fast: true, auto-fix: true]
 nakedret: Finds naked returns in functions greater than a specified function length [fast: true, auto-fix: false]
 prealloc: Finds slice declarations that could potentially be preallocated [fast: true, auto-fix: false]
+rowserrcheck: checks whether Err of rows is checked successfully [fast: true, auto-fix: false]
 scopelint: Scopelint checks for unpinned variables in go programs [fast: true, auto-fix: false]
 stylecheck: Stylecheck is a replacement for golint [fast: true, auto-fix: false]
 unconvert: Remove unnecessary type conversions [fast: true, auto-fix: false]
@@ -258,8 +260,8 @@ golangci-lint run --disable-all -E errcheck
    Golangci-lint automatically discovers `.golangci.yml` config for edited file: you don't need to configure it in VS Code settings.
 2. Sublime Text - [plugin](https://github.com/alecthomas/SublimeLinter-contrib-golang-cilint) for SublimeLinter.
 3. GoLand
-   * Configure [File Watcher](https://www.jetbrains.com/help/go/settings-tools-file-watchers.html) with arguments `run --print-issued-lines=false $FileDir$`.
-   * Predefined File Watcher will be added in [issue](https://youtrack.jetbrains.com/issue/GO-4574).
+   * Add [File Watcher](https://www.jetbrains.com/help/go/settings-tools-file-watchers.html) using existing `golangci-lint` template.
+   * If your version of GoLand does not have the `golangci-lint` [File Watcher](https://www.jetbrains.com/help/go/settings-tools-file-watchers.html) template you can configure your own and use arguments `run --disable=typecheck $FileDir$`.
 4. GNU Emacs
    * [Spacemacs](https://github.com/syl20bnr/spacemacs/blob/develop/layers/+lang/go/README.org#pre-requisites)
    * [flycheck checker](https://github.com/weijiangan/flycheck-golangci-lint).
@@ -456,6 +458,7 @@ golangci-lint help linters
 
 - [bodyclose](https://github.com/timakin/bodyclose) - checks whether HTTP response body is closed successfully
 - [golint](https://github.com/golang/lint) - Golint differs from gofmt. Gofmt reformats Go source code, whereas golint prints out style mistakes
+- [rowserrcheck](https://github.com/jingyugao/rowserr) - checks whether Err of rows is checked successfully
 - [stylecheck](https://github.com/dominikh/go-tools/tree/master/stylecheck) - Stylecheck is a replacement for golint
 - [gosec](https://github.com/securego/gosec) - Inspects source code for security problems
 - [interfacer](https://github.com/mvdan/interfacer) - Linter that suggests narrower interface types
@@ -482,6 +485,7 @@ golangci-lint help linters
 - [funlen](https://github.com/ultraware/funlen) - Tool for detection of long functions
 - [whitespace](https://github.com/ultraware/whitespace) - Tool for detection of leading and trailing whitespace
 - [wsl](https://github.com/bombsimon/wsl) - Whitespace Linter - Forces you to use empty lines!
+- [goprintffuncname](https://github.com/jirfag/go-printf-func-name) - Checks that printf-like functions are named with `f` at the end
 - [gomnd](https://github.com/tommy-muehle/go-mnd) - An analyzer to detect magic numbers.
 
 ## Configuration
@@ -507,6 +511,7 @@ Flags:
       --out-format string              Format of output: colored-line-number|line-number|json|tab|checkstyle|code-climate|junit-xml (default "colored-line-number")
       --print-issued-lines             Print lines of code with issue (default true)
       --print-linter-name              Print linter name in issue line (default true)
+      --uniq-by-line                   Make issues output unique by line (default true)
       --modules-download-mode string   Modules download mode. If not empty, passed as -mod=<mode> to go tools
       --issues-exit-code int           Exit code when issues were found (default 1)
       --build-tags strings             Build tags
@@ -665,6 +670,9 @@ output:
   # print linter name in the end of issue text, default is true
   print-linter-name: true
 
+  # make issues output unique by line, default is true
+  uniq-by-line: true
+
 
 # all available settings of specific linters
 linters-settings:
@@ -758,6 +766,9 @@ linters-settings:
     line-length: 120
     # tab width in spaces. Default to 1.
     tab-width: 1
+  rowserrcheck:
+    packages:
+      - github.com/jmoiron/sqlx
   unused:
     # treat code as a program (not a library) and report unused exported identifiers; default is false.
     # XXX: if you enable this setting, unused will report a lot of false-positives in text editors:
@@ -833,6 +844,18 @@ linters-settings:
     allow-trailing-comment: false
     # Force newlines in end of case at this limit (0 = never).
     force-case-trailing-whitespace: 0
+
+  # The custom section can be used to define linter plugins to be loaded at runtime. See README doc
+  #  for more info.
+  custom:
+    # Each custom linter should have a unique name.
+     example:
+      # The path to the plugin *.so. Can be absolute or local. Required for each custom linter
+      path: /path/to/example.so
+      # The description of the linter. Optional, just for documentation purposes.
+      description: This is an example usage of a plugin linter.
+      # Intended to point to the repo location of the linter. Optional, just for documentation purposes.
+      original-url: github.com/golangci/example-linter
 
 linters:
   enable:
@@ -971,6 +994,7 @@ linters:
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
   disable-all: true
   enable:
+    # - rowserrcheck
     - bodyclose
     - deadcode
     - depguard
@@ -1021,10 +1045,62 @@ run:
 # golangci.com configuration
 # https://github.com/golangci/golangci/wiki/Configuration
 service:
-  golangci-lint-version: 1.20.x # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.22.x # use the fixed version to not introduce new linters unexpectedly
   prepare:
     - echo "here I can run custom commands, but no preparation needed for this repo"
 ```
+
+## Custom Linters
+Some people and organizations may choose to have custom made linters run as a part of golangci-lint. That functionality 
+is supported through go's plugin library.
+
+### Create a Copy of `golangci-lint` that Can Run with Plugins
+In order to use plugins, you'll need a golangci-lint executable that can run them. The normal version of this project 
+is built with the vendors option, which breaks plugins that have overlapping dependencies.
+
+1. Download [golangci-lint](https://github.com/golangci/golangci-lint) source code
+2. From the projects root directory, run `make vendor_free_build`
+3. Copy the `golangci-lint` executable that was created to your path, project, or other location
+
+### Configure Your Project for Linting
+If you already have a linter plugin available, you can follow these steps to define it's usage in a projects 
+`.golangci.yml` file. An example linter can be found at [here](https://github.com/golangci/example-plugin-linter). If you're looking for 
+instructions on how to configure your own custom linter, they can be found further down.
+
+1. If the project you want to lint does not have one already, copy the [.golangci.yml](https://github.com/golangci/golangci-lint/blob/master/.golangci.yml) to the root directory.
+2. Adjust the yaml to appropriate `linters-settings:custom` entries as so:
+```
+linters-settings:
+ custom:
+  example:
+   path: /example.so
+   description: The description of the linter
+   original-url: github.com/golangci/example-linter
+```
+
+That is all the configuration that is required to run a custom linter in your project. Custom linters are enabled by default,
+but abide by the same rules as other linters. If the disable all option is specified either on command line or in 
+`.golang.yml` files `linters:disable-all: true`, custom linters will be disabled; they can be re-enabled by adding them 
+to the `linters:enable` list, or providing the enabled option on the command line, `golangci-lint run -Eexample`.
+
+### To Create Your Own Custom Linter
+
+Your linter must implement one or more `golang.org/x/tools/go/analysis.Analyzer` structs.
+Your project should also use `go.mod`. All versions of libraries that overlap `golangci-lint` (including replaced 
+libraries) MUST be set to the same version as `golangci-lint`. You can see the versions by running `go version -m golangci-lint`.
+
+You'll also need to create a go file like `plugin/example.go`. This MUST be in the package `main`, and define a 
+variable of name `AnalyzerPlugin`. The `AnalyzerPlugin` instance MUST implement the following interface:
+```
+type AnalyzerPlugin interface {
+    GetAnalyzers() []*analysis.Analyzer
+}
+```
+The type of `AnalyzerPlugin` is not important, but is by convention `type analyzerPlugin struct {}`. See 
+[plugin/example.go](https://github.com/golangci/example-plugin-linter/plugin/example.go) for more info.
+
+To build the plugin, from the root project directory, run `go build -buildmode=plugin plugin/example.go`. This will create a plugin `*.so`
+file that can be copied into your project or another well known location for usage in golangci-lint.
 
 ## False Positives
 
@@ -1140,6 +1216,7 @@ Thanks to developers and authors of used linters:
 - [timakin](https://github.com/timakin)
 - [kisielk](https://github.com/kisielk)
 - [golang](https://github.com/golang)
+- [jingyugao](https://github.com/jingyugao)
 - [dominikh](https://github.com/dominikh)
 - [securego](https://github.com/securego)
 - [opennota](https://github.com/opennota)
@@ -1161,6 +1238,7 @@ Thanks to developers and authors of used linters:
 - [matoous](https://github.com/matoous)
 - [ultraware](https://github.com/ultraware)
 - [bombsimon](https://github.com/bombsimon)
+- [jirfag](https://github.com/jirfag)
 - [tommy-muehle](https://github.com/tommy-muehle)
 
 ## Changelog
@@ -1243,6 +1321,8 @@ Existing debug tags:
 8. Documentation for every issue type.
 
 ## Contact Information
+
+Slack channel: [#golangci-lint](https://slack.com/share/IS0TDK8RG/TEKQWjTZXxfK9Ta2G5HrnsMY/enQtODg0OTMxNjU0ODY2LWUyMTQ3NDc2MmNlNGU3NTNhYWE0Nzc3MjUyZjkxZWI3YjI5ODMwNDA1NTU3MmM2Yzc5ZjQyYTFkNThlODllN2Y).
 
 You can contact the [author](https://github.com/jirfag) of GolangCI-Lint
 by [denis@golangci.com](mailto:denis@golangci.com). Follow the news and releases on our [twitter](https://twitter.com/golangci) and our [blog](https://medium.com/golangci).

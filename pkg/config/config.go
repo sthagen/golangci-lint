@@ -179,6 +179,9 @@ type LintersSettings struct {
 		MultiIf   bool `mapstructure:"multi-if"`
 		MultiFunc bool `mapstructure:"multi-func"`
 	}
+	RowsErrCheck struct {
+		Packages []string
+	}
 
 	WSL      WSLSettings
 	Lll      LllSettings
@@ -190,6 +193,8 @@ type LintersSettings struct {
 	Godox    GodoxSettings
 	Dogsled  DogsledSettings
 	Gocognit GocognitSettings
+
+	Custom map[string]CustomLinterSettings
 }
 
 type GovetSettings struct {
@@ -301,6 +306,12 @@ var defaultLintersSettings = LintersSettings{
 	},
 }
 
+type CustomLinterSettings struct {
+	Path        string
+	Description string
+	OriginalURL string `mapstructure:"original-url"`
+}
+
 type Linters struct {
 	Enable     []string
 	Disable    []string
@@ -378,6 +389,7 @@ type Config struct {
 		Color               string
 		PrintIssuedLine     bool `mapstructure:"print-issued-lines"`
 		PrintLinterName     bool `mapstructure:"print-linter-name"`
+		UniqByLine          bool `mapstructure:"uniq-by-line"`
 		PrintWelcomeMessage bool `mapstructure:"print-welcome"`
 	}
 

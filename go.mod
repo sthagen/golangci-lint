@@ -6,7 +6,7 @@ require (
 	github.com/OpenPeeDeeP/depguard v1.0.1
 	github.com/bombsimon/wsl/v2 v2.0.0
 	github.com/fatih/color v1.7.0
-	github.com/go-critic/go-critic v0.4.0
+	github.com/go-critic/go-critic v0.4.1
 	github.com/go-lintpack/lintpack v0.5.2
 	github.com/gofrs/flock v0.0.0-20190320160742-5135e617513b
 	github.com/golangci/check v0.0.0-20180506172741-cfe4005ccda2
@@ -23,12 +23,14 @@ require (
 	github.com/golangci/prealloc v0.0.0-20180630174525-215b22d4de21
 	github.com/golangci/revgrep v0.0.0-20180526074752-d9c87f5ffaf0
 	github.com/golangci/unconvert v0.0.0-20180507085042-28b1c447d1f4
+	github.com/jingyugao/rowserrcheck v0.0.0-20191204022205-72ab7603b68a
+	github.com/jirfag/go-printf-func-name v0.0.0-20191110105641-45db9963cdd3
 	github.com/matoous/godox v0.0.0-20190911065817-5d6d842e92eb // v1.0
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/go-ps v0.0.0-20190716172923-621e5597135b
 	github.com/pkg/errors v0.8.1
-	github.com/securego/gosec v0.0.0-20191002120514-e680875ea14d
+	github.com/securego/gosec v0.0.0-20200103095621-79fbf3af8d83
 	github.com/shirou/gopsutil v0.0.0-20190901111213-e4ec7b275ada // v2.19.8
 	github.com/sirupsen/logrus v1.4.2
 	github.com/sourcegraph/go-diff v0.5.1
@@ -42,7 +44,7 @@ require (
 	github.com/ultraware/whitespace v0.0.4
 	github.com/uudashr/gocognit v1.0.1
 	github.com/valyala/quicktemplate v1.2.0
-	golang.org/x/tools v0.0.0-20191113232020-e2727e816f5a
+	golang.org/x/tools v0.0.0-20200102140908-9497f49d5709
 	gopkg.in/yaml.v2 v2.2.7
 	honnef.co/go/tools v0.0.1-2019.2.3
 	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed
