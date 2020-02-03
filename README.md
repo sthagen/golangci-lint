@@ -73,17 +73,17 @@ use deprecated option `--enable-all` and a new linter is added or even without `
 
 It's highly recommended to install a specific version of golangci-lint available on the [releases page](https://github.com/golangci/golangci-lint/releases).
 
-Here is the recommended way to install golangci-lint v1.23.1:
+Here is the recommended way to install golangci-lint v1.23.2:
 
 ```bash
 # binary will be $(go env GOPATH)/bin/golangci-lint
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.1
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.2
 
 # or install it into ./bin/
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.23.1
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.23.2
 
 # In alpine linux (as it does not come with curl by default)
-wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.23.1
+wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.23.2
 
 golangci-lint --version
 ```
@@ -103,7 +103,7 @@ brew upgrade golangci/tap/golangci-lint
 ### Docker
 
 ```bash
-docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.23.1 golangci-lint run -v
+docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.23.2 golangci-lint run -v
 ```
 
 ### Go
@@ -125,6 +125,7 @@ The following companies/products use golangci-lint:
 * [Red Hat OpenShift](https://github.com/openshift/telemeter)
 * [Yahoo](https://github.com/yahoo/yfuzz)
 * [IBM](https://github.com/ibm-developer/ibm-cloud-env-golang)
+* [Intuit](https://github.com/intuit)
 * [Xiaomi](https://github.com/XiaoMi/soar)
 * [Baidu](https://github.com/baidu/bfe)
 * [Samsung](https://github.com/samsung-cnct/cluster-api-provider-ssh)
@@ -683,7 +684,7 @@ linters-settings:
     # tokens count to trigger issue, 150 by default
     threshold: 100
   errcheck:
-    # report about not checking of errors in type assetions: `a := b.(MyStruct)`;
+    # report about not checking of errors in type assertions: `a := b.(MyStruct)`;
     # default is false: such cases aren't reported by default.
     check-type-assertions: false
 
@@ -1096,7 +1097,7 @@ linters-settings:
 
 That is all the configuration that is required to run a custom linter in your project. Custom linters are enabled by default,
 but abide by the same rules as other linters. If the disable all option is specified either on command line or in 
-`.golang.yml` files `linters:disable-all: true`, custom linters will be disabled; they can be re-enabled by adding them 
+`.golangci.yml` files `linters:disable-all: true`, custom linters will be disabled; they can be re-enabled by adding them 
 to the `linters:enable` list, or providing the enabled option on the command line, `golangci-lint run -Eexample`.
 
 ### To Create Your Own Custom Linter
