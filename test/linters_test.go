@@ -17,9 +17,13 @@ import (
 
 func runGoErrchk(c *exec.Cmd, files []string, t *testing.T) {
 	output, err := c.CombinedOutput()
-	assert.Error(t, err)
-	_, ok := err.(*exec.ExitError)
-	assert.True(t, ok)
+	// The returned error will be nil if the test file does not have any issues
+	// and thus the linter exits with exit code 0. So perform the additional
+	// assertions only if the error is non-nil.
+	if err != nil {
+		_, ok := err.(*exec.ExitError)
+		assert.True(t, ok, err)
+	}
 
 	// TODO: uncomment after deprecating go1.11
 	// assert.Equal(t, exitcodes.IssuesFound, exitErr.ExitCode())
@@ -48,9 +52,9 @@ func testSourcesFromDir(t *testing.T, dir string) {
 
 	for _, s := range sources {
 		s := s
-		t.Run(filepath.Base(s), func(t *testing.T) {
-			t.Parallel()
-			testOneSource(t, s)
+		t.Run(filepath.Base(s), func(subTest *testing.T) {
+			subTest.Parallel()
+			testOneSource(subTest, s)
 		})
 	}
 }
@@ -79,6 +83,22 @@ func TestGoimportsLocal(t *testing.T) {
 		ExpectHasIssue("testdata/goimports/goimports.go:8: File is not `goimports`-ed")
 }
 
+func TestGciLocal(t *testing.T) {
+	sourcePath := filepath.Join(testdataDir, "gci", "gci.go")
+	args := []string{
+		"--disable-all", "--print-issued-lines=false", "--print-linter-name=false", "--out-format=line-number",
+		sourcePath,
+	}
+	rc := extractRunContextFromComments(t, sourcePath)
+	args = append(args, rc.args...)
+
+	cfg, err := yaml.Marshal(rc.config)
+	assert.NoError(t, err)
+
+	testshared.NewLintRunner(t).RunWithYamlConfig(string(cfg), args...).
+		ExpectHasIssue("testdata/gci/gci.go:7: File is not `gci`-ed")
+}
+
 func saveConfig(t *testing.T, cfg map[string]interface{}) (cfgPath string, finishFunc func()) {
 	f, err := ioutil.TempFile("", "golangci_lint_test")
 	assert.NoError(t, err)
@@ -101,11 +121,12 @@ func saveConfig(t *testing.T, cfg map[string]interface{}) (cfgPath string, finis
 func testOneSource(t *testing.T, sourcePath string) {
 	args := []string{
 		"run",
+		"--allow-parallel-runners",
 		"--disable-all",
 		"--print-issued-lines=false",
 		"--print-linter-name=false",
 		"--out-format=line-number",
-		"--max-same-issues=10",
+		"--max-same-issues=100",
 	}
 
 	rc := extractRunContextFromComments(t, sourcePath)
@@ -168,6 +189,12 @@ func buildConfigFromShortRepr(t *testing.T, repr string, config map[string]inter
 	lastObj[keyParts[len(keyParts)-1]] = kv[1]
 }
 
+func skipMultilineComment(scanner *bufio.Scanner) {
+	for line := scanner.Text(); !strings.Contains(line, "*/") && scanner.Scan(); {
+		line = scanner.Text()
+	}
+}
+
 func extractRunContextFromComments(t *testing.T, sourcePath string) *runContext {
 	f, err := os.Open(sourcePath)
 	assert.NoError(t, err)
@@ -178,10 +205,16 @@ func extractRunContextFromComments(t *testing.T, sourcePath string) *runContext 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := scanner.Text()
+		if strings.HasPrefix(line, "/*") {
+			skipMultilineComment(scanner)
+			continue
+		}
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
 		if !strings.HasPrefix(line, "//") {
 			return rc
 		}
-
 		line = strings.TrimPrefix(line, "//")
 		if strings.HasPrefix(line, "args: ") {
 			assert.Nil(t, rc.args)
@@ -219,11 +252,55 @@ func TestExtractRunContextFromComments(t *testing.T) {
 	assert.Equal(t, []string{"-Egoimports"}, rc.args)
 }
 
-func TestGolintConsumesXTestFiles(t *testing.T) {
-	dir := getTestDataDir("withxtest")
-	const expIssue = "`if` block ends with a `return` statement, so drop this `else` and outdent its block"
+func TestTparallel(t *testing.T) {
+	t.Run("should fail on missing top-level Parallel()", func(t *testing.T) {
+		sourcePath := filepath.Join(testdataDir, "tparallel", "missing_toplevel_test.go")
+		args := []string{
+			"--disable-all", "--print-issued-lines=false", "--print-linter-name=false", "--out-format=line-number", "--enable", "tparallel",
+			sourcePath,
+		}
+		rc := extractRunContextFromComments(t, sourcePath)
+		args = append(args, rc.args...)
 
-	r := testshared.NewLintRunner(t)
-	r.Run("--no-config", "--disable-all", "-Egolint", dir).ExpectHasIssue(expIssue)
-	r.Run("--no-config", "--disable-all", "-Egolint", filepath.Join(dir, "p_test.go")).ExpectHasIssue(expIssue)
+		cfg, err := yaml.Marshal(rc.config)
+		assert.NoError(t, err)
+
+		testshared.NewLintRunner(t).RunWithYamlConfig(string(cfg), args...).
+			ExpectHasIssue(
+				"testdata/tparallel/missing_toplevel_test.go:7:6: TestTopLevel should call t.Parallel on the top level as well as its subtests\n",
+			)
+	})
+
+	t.Run("should fail on missing subtest Parallel()", func(t *testing.T) {
+		sourcePath := filepath.Join(testdataDir, "tparallel", "missing_subtest_test.go")
+		args := []string{
+			"--disable-all", "--print-issued-lines=false", "--print-linter-name=false", "--out-format=line-number", "--enable", "tparallel",
+			sourcePath,
+		}
+		rc := extractRunContextFromComments(t, sourcePath)
+		args = append(args, rc.args...)
+
+		cfg, err := yaml.Marshal(rc.config)
+		assert.NoError(t, err)
+
+		testshared.NewLintRunner(t).RunWithYamlConfig(string(cfg), args...).
+			ExpectHasIssue(
+				"testdata/tparallel/missing_subtest_test.go:7:6: TestSubtests's subtests should call t.Parallel\n",
+			)
+	})
+
+	t.Run("should pass on parallel test with no subtests", func(t *testing.T) {
+		sourcePath := filepath.Join(testdataDir, "tparallel", "happy_path_test.go")
+		args := []string{
+			"--disable-all", "--print-issued-lines=false", "--print-linter-name=false", "--out-format=line-number", "--enable", "tparallel",
+			sourcePath,
+		}
+		rc := extractRunContextFromComments(t, sourcePath)
+		args = append(args, rc.args...)
+
+		cfg, err := yaml.Marshal(rc.config)
+		assert.NoError(t, err)
+
+		testshared.NewLintRunner(t).RunWithYamlConfig(string(cfg), args...).ExpectNoIssues()
+	})
 }

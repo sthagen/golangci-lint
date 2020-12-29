@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/golangci/golangci-lint/pkg/config"
+	"github.com/golangci/golangci-lint/pkg/golinters"
 	"github.com/golangci/golangci-lint/pkg/lint/lintersdb"
 	"github.com/golangci/golangci-lint/pkg/logutils"
 	"github.com/golangci/golangci-lint/pkg/result"
@@ -31,7 +33,7 @@ func newNolint2FileIssue(line int) result.Issue {
 }
 
 func newTestNolintProcessor(log logutils.Log) *Nolint {
-	return NewNolint(log, lintersdb.NewManager(nil, nil))
+	return NewNolint(log, lintersdb.NewManager(nil, nil), nil)
 }
 
 func getMockLog() *logutils.MockLog {
@@ -40,7 +42,6 @@ func getMockLog() *logutils.MockLog {
 	return log
 }
 
-//nolint:funlen
 func TestNolint(t *testing.T) {
 	p := newTestNolintProcessor(getMockLog())
 	defer p.Finish()
@@ -148,6 +149,28 @@ func TestNolintInvalidLinterName(t *testing.T) {
 	p.Finish()
 }
 
+func TestNolintInvalidLinterNameWithViolationOnTheSameLine(t *testing.T) {
+	log := getMockLog()
+	log.On("Warnf", "Found unknown linters in //nolint directives: %s", "foobar")
+	issues := []result.Issue{
+		{
+			Pos: token.Position{
+				Filename: filepath.Join("testdata", "nolint_apply_to_unknown.go"),
+				Line:     4,
+			},
+			FromLinter: "gofmt",
+		},
+	}
+
+	p := newTestNolintProcessor(log)
+	processedIssues, err := p.Process(issues)
+	p.Finish()
+
+	assert.Len(t, processedIssues, 1)
+	assert.Equal(t, issues, processedIssues)
+	assert.NoError(t, err)
+}
+
 func TestNolintAliases(t *testing.T) {
 	p := newTestNolintProcessor(getMockLog())
 	for _, line := range []int{47, 49, 51} {
@@ -229,7 +252,7 @@ func TestNolintWholeFile(t *testing.T) {
 			Filename: fileName,
 			Line:     4,
 		},
-		FromLinter: "unparam",
+		FromLinter: "varcheck",
 	})
 	processAssertSame(t, p, result.Issue{
 		Pos: token.Position{
@@ -237,5 +260,70 @@ func TestNolintWholeFile(t *testing.T) {
 			Line:     4,
 		},
 		FromLinter: "deadcode",
+	})
+}
+
+func TestNolintUnused(t *testing.T) {
+	fileName := filepath.Join("testdata", "nolint_unused.go")
+
+	log := getMockLog()
+	log.On("Warnf", "Found unknown linters in //nolint directives: %s", "blah")
+
+	createProcessor := func(t *testing.T, log *logutils.MockLog, enabledLinters []string) *Nolint {
+		enabledSetLog := logutils.NewMockLog()
+		enabledSetLog.On("Infof", "Active %d linters: %s", len(enabledLinters), enabledLinters)
+		cfg := &config.Config{Linters: config.Linters{DisableAll: true, Enable: enabledLinters}}
+		dbManager := lintersdb.NewManager(cfg, nil)
+		enabledLintersSet := lintersdb.NewEnabledSet(dbManager, lintersdb.NewValidator(dbManager), enabledSetLog, cfg)
+		enabledLintersMap, err := enabledLintersSet.GetEnabledLintersMap()
+		assert.NoError(t, err)
+		return NewNolint(log, dbManager, enabledLintersMap)
+	}
+
+	// the issue below is the nolintlint issue that would be generated for the test file
+	nolintlintIssueVarcheck := result.Issue{
+		Pos: token.Position{
+			Filename: fileName,
+			Line:     3,
+		},
+		FromLinter:           golinters.NolintlintName,
+		ExpectNoLint:         true,
+		ExpectedNoLintLinter: "varcheck",
+	}
+
+	t.Run("when an issue does not occur, it is not removed from the nolintlint issues", func(t *testing.T) {
+		p := createProcessor(t, log, []string{"nolintlint", "varcheck"})
+		defer p.Finish()
+
+		processAssertSame(t, p, nolintlintIssueVarcheck)
+	})
+
+	t.Run("when an issue occurs, it is removed from the nolintlint issues", func(t *testing.T) {
+		p := createProcessor(t, log, []string{"nolintlint", "varcheck"})
+		defer p.Finish()
+
+		processAssertEmpty(t, p, []result.Issue{{
+			Pos: token.Position{
+				Filename: fileName,
+				Line:     3,
+			},
+			FromLinter: "varcheck",
+		}, nolintlintIssueVarcheck}...)
+	})
+
+	t.Run("when a linter is not enabled, it is removed from the nolintlint unused issues", func(t *testing.T) {
+		enabledSetLog := logutils.NewMockLog()
+		enabledSetLog.On("Infof", "Active %d linters: %s", 1, []string{"nolintlint"})
+
+		cfg := &config.Config{Linters: config.Linters{DisableAll: true, Enable: []string{"nolintlint"}}}
+		dbManager := lintersdb.NewManager(cfg, nil)
+		enabledLintersSet := lintersdb.NewEnabledSet(dbManager, lintersdb.NewValidator(dbManager), enabledSetLog, cfg)
+
+		enabledLintersMap, err := enabledLintersSet.GetEnabledLintersMap()
+		assert.NoError(t, err)
+		p := NewNolint(log, dbManager, enabledLintersMap)
+		defer p.Finish()
+
+		processAssertEmpty(t, p, nolintlintIssueVarcheck)
 	})
 }

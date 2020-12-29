@@ -1,10 +1,6 @@
 .DEFAULT_GOAL = test
 .PHONY: FORCE
 
-# enable module support across all go commands.
-export GO111MODULE = on
-# opt-in to vendor deps across all go commands.
-export GOFLAGS = -mod=vendor
 # enable consistent Go 1.12/1.13 GOPROXY behavior.
 export GOPROXY = https://proxy.golang.org
 
@@ -30,10 +26,8 @@ clean:
 # Test
 test: export GOLANGCI_LINT_INSTALLED = true
 test: build
-	GL_TEST_RUN=1 time ./golangci-lint run -v
-	GL_TEST_RUN=1 time ./golangci-lint run --fast --no-config -v --skip-dirs 'test/testdata_etc,internal/(cache|renameio|robustio)'
-	GL_TEST_RUN=1 time ./golangci-lint run --no-config -v --skip-dirs 'test/testdata_etc,internal/(cache|renameio|robustio)'
-	GL_TEST_RUN=1 time go test -v ./...
+	GL_TEST_RUN=1 ./golangci-lint run -v
+	GL_TEST_RUN=1 go test -v -parallel 2 ./...
 .PHONY: test
 
 test_race: build_race
@@ -46,31 +40,32 @@ test_linters:
 
 # Maintenance
 
-generate: README.md docs/demo.svg install.sh vendor
-.PHONY: generate
-
-fast_generate: README.md vendor
-.PHONY: fast_generate
+generate: install.sh assets/github-action-config.json
+fast_generate: assets/github-action-config.json
+.PHONY: generate fast_generate
 
 maintainer-clean: clean
-	rm -rf docs/demo.svg README.md install.sh vendor
+	rm -rf install.sh
 .PHONY: maintainer-clean
-
-check_generated:
-	$(MAKE) --always-make generate
-	git checkout -- vendor/modules.txt go.mod go.sum # can differ between go1.12 and go1.13
-	git diff --exit-code # check no changes
-.PHONY: check_generated
 
 fast_check_generated:
 	$(MAKE) --always-make fast_generate
-	git checkout -- vendor/modules.txt go.mod go.sum # can differ between go1.12 and go1.13
+	git checkout -- go.mod go.sum # can differ between go1.12 and go1.13
 	git diff --exit-code # check no changes
-.PHONY: fast_check_generated
+
+check_generated:
+	$(MAKE) --always-make generate
+	git checkout -- go.mod go.sum # can differ between go1.12 and go1.13
+	git diff --exit-code # check no changes
+.PHONY: check_generated
 
 release: .goreleaser.yml tools/goreleaser
 	./tools/goreleaser
 .PHONY: release
+
+snapshot: .goreleaser.yml tools/goreleaser
+	./tools/goreleaser --snapshot --rm-dist
+.PHONY: snapshot
 
 # Non-PHONY targets (real files)
 
@@ -85,31 +80,36 @@ tools/goreleaser: export GOFLAGS = -mod=readonly
 tools/goreleaser: tools/go.mod tools/go.sum
 	cd tools && go build github.com/goreleaser/goreleaser
 
+# TODO: migrate to docs/
 tools/svg-term: tools/package.json tools/package-lock.json
 	cd tools && npm ci
 	ln -sf node_modules/.bin/svg-term $@
 
+# TODO: migrate to docs/
 tools/Dracula.itermcolors:
 	curl -fL -o $@ https://raw.githubusercontent.com/dracula/iterm/master/Dracula.itermcolors
 
-docs/demo.svg: tools/svg-term tools/Dracula.itermcolors
-	./tools/svg-term --cast=183662 --out docs/demo.svg --window --width 110 --height 30 --from 2000 --to 20000 --profile ./tools/Dracula.itermcolors --term iterm2
+# TODO: migrate to docs/
+assets/demo.svg: tools/svg-term tools/Dracula.itermcolors
+	./tools/svg-term --cast=183662 --out assets/demo.svg --window --width 110 --height 30 --from 2000 --to 20000 --profile ./tools/Dracula.itermcolors --term iterm2
 
 install.sh: .goreleaser.yml tools/godownloader
 	./tools/godownloader .goreleaser.yml | sed '/DO NOT EDIT/s/ on [0-9TZ:-]*//' > $@
 
-README.md: FORCE golangci-lint
-	go run ./scripts/gen_readme/main.go
+assets/github-action-config.json: FORCE golangci-lint
+	go run ./scripts/gen_github_action_config/main.go $@
 
 go.mod: FORCE
 	go mod tidy
 	go mod verify
 go.sum: go.mod
 
-vendor: go.mod go.sum
-	go mod vendor
+expand_website_templates:
+	go run ./scripts/expand_website_templates/main.go
+.PHONY: expand_website_templates
 
-unexport GOFLAGS
-vendor_free_build: FORCE
-	go build -o golangci-lint ./cmd/golangci-lint
-.PHONY: vendor_free_build vendor
+update_contributors_list:
+	cd .github/contributors && npm run all
+
+update_netlify_state:
+	go run ./scripts/expand_website_templates/main.go -only-state

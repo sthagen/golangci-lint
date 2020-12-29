@@ -1,1349 +1,354 @@
-# GolangCI-Lint
+<p align="center">
+  <img alt="golangci-lint logo" src="assets/go.png" height="150" />
+  <h3 align="center">golangci-lint</h3>
+  <p align="center">Fast linters runner for Go</p>
+</p>
 
-[![Build Status](https://travis-ci.com/golangci/golangci-lint.svg?branch=master)](https://travis-ci.com/golangci/golangci-lint)
-[![GolangCI](https://golangci.com/badges/github.com/golangci/golangci-lint.svg)](https://golangci.com)
+---
+
+`golangci-lint` is a fast Go linters runner. It runs linters in parallel, uses caching, supports `yaml` config, has integrations
+with all major IDE and has dozens of linters included.
+
+## Install `golangci-lint`
+
+- [On my machine](https://golangci-lint.run/usage/install/#local-installation);
+- [On CI/CD systems](https://golangci-lint.run/usage/install/#ci-installation).
+
+## Documentation
+
+Documentation is hosted at https://golangci-lint.run.
+
+## Badges
+
+![Build Status](https://github.com/golangci/golangci-lint/workflows/CI/badge.svg)
 [![License](https://img.shields.io/github/license/golangci/golangci-lint)](/LICENSE)
 [![Release](https://img.shields.io/github/release/golangci/golangci-lint.svg)](https://github.com/golangci/golangci-lint/releases/latest)
 [![Docker](https://img.shields.io/docker/pulls/golangci/golangci-lint)](https://hub.docker.com/r/golangci/golangci-lint)
-
-GolangCI-Lint is a linters aggregator. It's fast: on average [5 times faster](#performance) than gometalinter.
-It's [easy to integrate and use](#command-line-options), has [nice output](#quick-start) and has a minimum number of false positives. It supports go modules.
-
-GolangCI-Lint has [integrations](#editor-integration) with VS Code, GNU Emacs, Sublime Text.
-
-Follow the news and releases on our [twitter](https://twitter.com/golangci) and our [blog](https://medium.com/golangci).
-
-Sponsored by [GolangCI.com](https://golangci.com): SaaS service for running linters on GitHub pull requests. Free for Open Source.
-
-<a href="https://golangci.com/"><img src="docs/go.png" width="250px"></a>
-
-- [GolangCI-Lint](#golangci-lint)
-  - [Demo](#demo)
-  - [Install](#install)
-    - [Binary](#binary)
-    - [macOS](#macos)
-    - [Docker](#docker)
-    - [Go](#go)
-  - [Trusted By](#trusted-by)
-  - [Quick Start](#quick-start)
-  - [Editor Integration](#editor-integration)
-  - [Shell Completion](#shell-completion)
-    - [macOS](#macos-1)
-    - [Linux](#linux)
-  - [Comparison](#comparison)
-    - [`golangci-lint` vs `gometalinter`](#golangci-lint-vs-gometalinter)
-    - [`golangci-lint` vs Running Linters Manually](#golangci-lint-vs-running-linters-manually)
-  - [Performance](#performance)
-    - [Comparison with gometalinter](#comparison-with-gometalinter)
-    - [Why golangci-lint is faster](#why-golangci-lint-is-faster)
-    - [Memory Usage of Golangci-lint](#memory-usage-of-golangci-lint)
-  - [Internals](#internals)
-  - [Supported Linters](#supported-linters)
-    - [Enabled By Default Linters](#enabled-by-default-linters)
-    - [Disabled By Default Linters (`-E/--enable`)](#disabled-by-default-linters--e--enable)
-  - [Configuration](#configuration)
-    - [Command-Line Options](#command-line-options)
-    - [Config File](#config-file)
-  - [False Positives](#false-positives)
-    - [Nolint](#nolint)
-  - [FAQ](#faq)
-  - [Thanks](#thanks)
-  - [Changelog](#changelog)
-  - [Debug](#debug)
-  - [Future Plans](#future-plans)
-  - [Contact Information](#contact-information)
-  - [License Scan](#license-scan)
-
-## Demo
-
-<p align="center">
-  <img src="./docs/demo.svg" width="100%">
-</p>
-
-Short 1.5 min video demo of analyzing [beego](https://github.com/astaxie/beego).
-[![asciicast](https://asciinema.org/a/183662.png)](https://asciinema.org/a/183662)
-
-## Install
-
-### Binary
-
-Most installations are done for CI (e.g. Travis CI, CircleCI). It's important to have reproducible CI:
-don't start to fail all builds at the same time. With golangci-lint this can happen if you
-use deprecated option `--enable-all` and a new linter is added or even without `--enable-all`: when one upstream linter is upgraded.
-
-It's highly recommended to install a specific version of golangci-lint available on the [releases page](https://github.com/golangci/golangci-lint/releases).
-
-Here is the recommended way to install golangci-lint v1.23.8:
-
-```bash
-# binary will be $(go env GOPATH)/bin/golangci-lint
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.8
-
-# or install it into ./bin/
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.23.8
-
-# In alpine linux (as it does not come with curl by default)
-wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.23.8
-
-golangci-lint --version
-```
-
-It is advised that you periodically update version of golangci-lint as the project is under active development
-and is constantly being improved. For any problems with golangci-lint, check out recent [GitHub issues](https://github.com/golangci/golangci-lint/issues) and update if needed.
-
-### macOS
-
-You can also install a binary release on macOS using [brew](https://brew.sh/):
-
-```bash
-brew install golangci/tap/golangci-lint
-brew upgrade golangci/tap/golangci-lint
-```
-
-### Docker
-
-```bash
-docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.23.8 golangci-lint run -v
-```
-
-### Go
-
-Please, do not install `golangci-lint` by `go get`:
-
-1. [`go.mod`](https://github.com/golangci/golangci-lint/blob/master/go.mod) replacement directive doesn't apply. It means you will be using patched version of `golangci-lint`.
-2. it's much slower than binary installation
-3. its stability depends on your Go version (e.g. on [this compiler Go <= 1.12 bug](https://github.com/golang/go/issues/29612)).
-4. it's not guaranteed to work: e.g. we've encountered a lot of issues with Go modules hashes.
-5. it allows installation from `master` branch which can't be considered stable.
-
-## Trusted By
-
-The following companies/products use golangci-lint:
-
-* [Google](https://github.com/GoogleContainerTools/skaffold)
-* [Facebook](https://github.com/facebookincubator/fbender)
-* [Red Hat OpenShift](https://github.com/openshift/telemeter)
-* [Yahoo](https://github.com/yahoo/yfuzz)
-* [IBM](https://github.com/ibm-developer/ibm-cloud-env-golang)
-* [Intuit](https://github.com/intuit)
-* [Xiaomi](https://github.com/XiaoMi/soar)
-* [Baidu](https://github.com/baidu/bfe)
-* [Samsung](https://github.com/samsung-cnct/cluster-api-provider-ssh)
-* [Arduino](https://github.com/arduino/arduino-cli)
-* [Eclipse Foundation](https://github.com/eclipse/che-go-jsonrpc)
-* [WooCart](https://github.com/woocart/gsutil)
-* [Percona](https://github.com/percona/pmm-managed)
-* [Serverless](https://github.com/serverless/event-gateway)
-* [ScyllaDB](https://github.com/scylladb/gocqlx)
-* [NixOS](https://github.com/NixOS/nixpkgs-channels)
-* [The New York Times](https://github.com/NYTimes/encoding-wrapper)
-* [Istio](https://github.com/istio/istio)
-* [SoundCloud](https://github.com/soundcloud/periskop)
-* [Mattermost](https://github.com/mattermost/mattermost-server)
-
-The following great projects use golangci-lint:
-
-* [alecthomas/participle](https://github.com/alecthomas/participle)
-* [asobti/kube-monkey](https://github.com/asobti/kube-monkey)
-* [banzaicloud/pipeline](https://github.com/banzaicloud/pipeline)
-* [caicloud/cyclone](https://github.com/caicloud/cyclone)
-* [getantibody/antibody](https://github.com/getantibody/antibody)
-* [goreleaser/goreleaser](https://github.com/goreleaser/goreleaser)
-* [go-swagger/go-swagger](https://github.com/go-swagger/go-swagger)
-* [kubeedge/kubeedge](https://github.com/kubeedge/kubeedge)
-* [kubernetes-sigs/kustomize](https://github.com/kubernetes-sigs/kustomize)
-* [dunglas/mercure](https://github.com/dunglas/mercure)
-* [posener/complete](https://github.com/posener/complete)
-* [segmentio/terraform-docs](https://github.com/segmentio/terraform-docs)
-* [tsuru/tsuru](https://github.com/tsuru/tsuru)
-* [twpayne/chezmoi](https://github.com/twpayne/chezmoi)
-* [virtual-kubelet/virtual-kubelet](https://github.com/virtual-kubelet/virtual-kubelet)
-* [xenolf/lego](https://github.com/xenolf/lego)
-* [y0ssar1an/q](https://github.com/y0ssar1an/q)
-
-## Quick Start
-
-To run golangci-lint execute:
-
-```bash
-golangci-lint run
-```
-
-It's an equivalent of executing:
-
-```bash
-golangci-lint run ./...
-```
-
-You can choose which directories and files to analyze:
-
-```bash
-golangci-lint run dir1 dir2/... dir3/file1.go
-```
-
-Directories are NOT analyzed recursively. To analyze them recursively append `/...` to their path.
-
-GolangCI-Lint can be used with zero configuration. By default the following linters are enabled:
-
-```bash
-$ golangci-lint help linters
-Enabled by default linters:
-deadcode: Finds unused code [fast: true, auto-fix: false]
-errcheck: Errcheck is a program for checking for unchecked errors in go programs. These unchecked errors can be critical bugs in some cases [fast: true, auto-fix: false]
-gosimple (megacheck): Linter for Go source code that specializes in simplifying a code [fast: true, auto-fix: false]
-govet (vet, vetshadow): Vet examines Go source code and reports suspicious constructs, such as Printf calls whose arguments do not align with the format string [fast: true, auto-fix: false]
-ineffassign: Detects when assignments to existing variables are not used [fast: true, auto-fix: false]
-staticcheck (megacheck): Staticcheck is a go vet on steroids, applying a ton of static analysis checks [fast: true, auto-fix: false]
-structcheck: Finds unused struct fields [fast: true, auto-fix: false]
-typecheck: Like the front-end of a Go compiler, parses and type-checks Go code [fast: true, auto-fix: false]
-unused (megacheck): Checks Go code for unused constants, variables, functions and types [fast: false, auto-fix: false]
-varcheck: Finds unused global variables and constants [fast: true, auto-fix: false]
-```
-
-and the following linters are disabled by default:
-
-```bash
-$ golangci-lint help linters
-...
-Disabled by default linters:
-bodyclose: checks whether HTTP response body is closed successfully [fast: true, auto-fix: false]
-depguard: Go linter that checks if package imports are in a list of acceptable packages [fast: true, auto-fix: false]
-dogsled: Checks assignments with too many blank identifiers (e.g. x, _, _, _, := f()) [fast: true, auto-fix: false]
-dupl: Tool for code clone detection [fast: true, auto-fix: false]
-funlen: Tool for detection of long functions [fast: true, auto-fix: false]
-gochecknoglobals: Checks that no globals are present in Go code [fast: true, auto-fix: false]
-gochecknoinits: Checks that no init functions are present in Go code [fast: true, auto-fix: false]
-gocognit: Computes and checks the cognitive complexity of functions [fast: true, auto-fix: false]
-goconst: Finds repeated strings that could be replaced by a constant [fast: true, auto-fix: false]
-gocritic: The most opinionated Go source code linter [fast: true, auto-fix: false]
-gocyclo: Computes and checks the cyclomatic complexity of functions [fast: true, auto-fix: false]
-godox: Tool for detection of FIXME, TODO and other comment keywords [fast: true, auto-fix: false]
-gofmt: Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification [fast: true, auto-fix: true]
-goimports: Goimports does everything that gofmt does. Additionally it checks unused imports [fast: true, auto-fix: true]
-golint: Golint differs from gofmt. Gofmt reformats Go source code, whereas golint prints out style mistakes [fast: true, auto-fix: false]
-gomnd: An analyzer to detect magic numbers. [fast: true, auto-fix: false]
-goprintffuncname: Checks that printf-like functions are named with `f` at the end [fast: true, auto-fix: false]
-gosec (gas): Inspects source code for security problems [fast: true, auto-fix: false]
-interfacer: Linter that suggests narrower interface types [fast: true, auto-fix: false]
-lll: Reports long lines [fast: true, auto-fix: false]
-maligned: Tool to detect Go structs that would take less memory if their fields were sorted [fast: true, auto-fix: false]
-misspell: Finds commonly misspelled English words in comments [fast: true, auto-fix: true]
-nakedret: Finds naked returns in functions greater than a specified function length [fast: true, auto-fix: false]
-prealloc: Finds slice declarations that could potentially be preallocated [fast: true, auto-fix: false]
-rowserrcheck: checks whether Err of rows is checked successfully [fast: true, auto-fix: false]
-scopelint: Scopelint checks for unpinned variables in go programs [fast: true, auto-fix: false]
-stylecheck: Stylecheck is a replacement for golint [fast: true, auto-fix: false]
-unconvert: Remove unnecessary type conversions [fast: true, auto-fix: false]
-unparam: Reports unused function parameters [fast: true, auto-fix: false]
-whitespace: Tool for detection of leading and trailing whitespace [fast: true, auto-fix: true]
-wsl: Whitespace Linter - Forces you to use empty lines! [fast: true, auto-fix: false]
-```
-
-Pass `-E/--enable` to enable linter and `-D/--disable` to disable:
-
-```bash
-golangci-lint run --disable-all -E errcheck
-```
-
-## Editor Integration
-
-1. [Go for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go).
-   Recommended settings for VS Code are:
-
-   ```json
-   "go.lintTool":"golangci-lint",
-   "go.lintFlags": [
-     "--fast"
-   ]
-   ```
-
-   Using it in an editor without `--fast` can freeze your editor.
-   Golangci-lint automatically discovers `.golangci.yml` config for edited file: you don't need to configure it in VS Code settings.
-2. Sublime Text - [plugin](https://github.com/alecthomas/SublimeLinter-contrib-golang-cilint) for SublimeLinter.
-3. GoLand
-   * Add [File Watcher](https://www.jetbrains.com/help/go/settings-tools-file-watchers.html) using existing `golangci-lint` template.
-   * If your version of GoLand does not have the `golangci-lint` [File Watcher](https://www.jetbrains.com/help/go/settings-tools-file-watchers.html) template you can configure your own and use arguments `run --disable=typecheck $FileDir$`.
-4. GNU Emacs
-   * [Spacemacs](https://github.com/syl20bnr/spacemacs/blob/develop/layers/+lang/go/README.org#pre-requisites)
-   * [flycheck checker](https://github.com/weijiangan/flycheck-golangci-lint).
-5. Vim
-   * [vim-go](https://github.com/fatih/vim-go)
-   * syntastic [merged pull request](https://github.com/vim-syntastic/syntastic/pull/2190) with golangci-lint support
-   * ale [merged pull request](https://github.com/w0rp/ale/pull/1890) with golangci-lint support
-6. Atom - [go-plus](https://atom.io/packages/go-plus) supports golangci-lint.
-
-## Shell Completion
-
-`golangci-lint` can generate bash completion file.
-
-### macOS
-
-There are two versions of `bash-completion`, v1 and v2. V1 is for Bash 3.2 (which is the default on macOS), and v2 is for Bash 4.1+. The `golangci-lint` completion script doesn’t work correctly with bash-completion v1 and Bash 3.2. It requires bash-completion v2 and Bash 4.1+. Thus, to be able to correctly use `golangci-lint` completion on macOS, you have to install and use Bash 4.1+ ([instructions](https://itnext.io/upgrading-bash-on-macos-7138bd1066ba)). The following instructions assume that you use Bash 4.1+ (that is, any Bash version of 4.1 or newer).
-
-Install `bash-completion v2`:
-
-```bash
-brew install bash-completion@2
-echo 'export BASH_COMPLETION_COMPAT_DIR="/usr/local/etc/bash_completion.d"' >>~/.bashrc
-echo '[[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && . "/usr/local/etc/profile.d/bash_completion.sh"' >>~/.bashrc
-exec bash # reload and replace (if it was updated) shell
-type _init_completion && echo "completion is OK" # verify that bash-completion v2 is correctly installed
-```
-
-Add `golangci-lint` bash completion:
-
-```bash
-echo 'source <(golangci-lint completion bash)' >>~/.bashrc
-source ~/.bashrc
-```
-
-### Linux
-
-See [kubectl instructions](https://kubernetes.io/docs/tasks/tools/install-kubectl/#enabling-shell-autocompletion) and don't forget to replace `kubectl` with `golangci-lint`.
-
-## Comparison
-
-### `golangci-lint` vs `gometalinter`
-
-GolangCI-Lint was created to fix the following issues with `gometalinter`:
-
-1. Slow work: `gometalinter` usually works for minutes in average projects.
-   **GolangCI-Lint works [2-7x times faster](#performance)** by [reusing work](#internals).
-2. Huge memory consumption: parallel linters don't share the same program representation and can consume
-   `n` times more memory (`n` - concurrency). GolangCI-Lint fixes it by sharing representation and **consumes 26% less memory**.
-3. Doesn't use real bounded concurrency: if you set it to `n` it can take up to `n*n` threads because of
-   forced threads in specific linters. `gometalinter` can't do anything about it because it runs linters as
-   black boxes in forked processes. In GolangCI-Lint we run all linters in one process and completely control
-   them. Configured concurrency will be correctly bounded.
-   This issue is important because you often want to set concurrency to the CPUs count minus one to
-   ensure you **do not freeze your PC** and be able to work on it while analyzing code.
-4. Lack of nice output. We like how the `gcc` and `clang` compilers format their warnings: **using colors,
-   printing warning lines and showing the position in line**.
-5. Too many issues. GolangCI-Lint cuts a lot of issues by using default exclude list of common false-positives.
-   By default, it has enabled **smart issues processing**: merge multiple issues for one line, merge issues with the
-   same text or from the same linter. All of these smart processors can be configured by the user.
-6. Integration into large codebases. A good way to start using linters in a large project is not to fix a plethora
-   of existing issues, but to set up CI and **fix only issues in new commits**. You can use `revgrep` for it, but it's
-   yet another utility to install and configure. With `golangci-lint` it's much easier: `revgrep` is already built into
-   `golangci-lint` and you can use it with one option (`-n, --new` or `--new-from-rev`).
-7. Installation. With `gometalinter`, you need to run a linters installation step. It's easy to forget this step and
-   end up with stale linters. It also complicates CI setup. GolangCI-Lint requires **no installation of linters**.
-8. **Yaml or toml config**. Gometalinter's JSON isn't convenient for config files.
-
-### `golangci-lint` vs Running Linters Manually
-
-1. It will be much slower because `golangci-lint` runs all linters in parallel and shares 50-80% of linters work.
-2. It will have less control and more false-positives: some linters can't be properly configured without hacks.
-3. It will take more time because of different usages and need of tracking of versions of `n` linters.
-
-## Performance
-
-Benchmarks were executed on MacBook Pro (Retina, 13-inch, Late 2013), 2,4 GHz Intel Core i5, 8 GB 1600 MHz DDR3.
-It has 4 cores and concurrent linting as a default consuming all cores.
-Benchmark was run (and measured) automatically, see the code
-[here](https://github.com/golangci/golangci-lint/blob/master/test/bench_test.go) (`BenchmarkWithGometalinter`).
-
-We measure peak memory usage (RSS) by tracking of processes RSS every 5 ms.
-
-### Comparison with gometalinter
-
-We compare golangci-lint and gometalinter in default mode, but explicitly enable all linters because of small differences in the default configuration.
-
-```bash
-$ golangci-lint run --no-config --issues-exit-code=0 --timeout=30m \
-  --disable-all --enable=deadcode  --enable=gocyclo --enable=golint --enable=varcheck \
-  --enable=structcheck --enable=maligned --enable=errcheck --enable=dupl --enable=ineffassign \
-  --enable=interfacer --enable=unconvert --enable=goconst --enable=gosec --enable=megacheck
-$ gometalinter --deadline=30m --vendor --cyclo-over=30 --dupl-threshold=150 \
-  --exclude=<default golangci-lint excludes> --skip=testdata --skip=builtin \
-  --disable-all --enable=deadcode  --enable=gocyclo --enable=golint --enable=varcheck \
-  --enable=structcheck --enable=maligned --enable=errcheck --enable=dupl --enable=ineffassign \
-  --enable=interfacer --enable=unconvert --enable=goconst --enable=gosec --enable=megacheck
-  ./...
-```
-
-| Repository | GolangCI Time | GolangCI Is Faster than Gometalinter | GolangCI Memory | GolangCI eats less memory than Gometalinter |
-| ---------- | ------------- | ------------------------------------ | --------------- | ------------------------------------------- |
-| gometalinter repo, 4 kLoC   | 6s    | **6.4x** | 0.7GB | 33%  |
-| self-repo, 4 kLoC           | 12s   | **7.5x** | 1.2GB | 41%  |
-| beego, 50 kLoC              | 10s   | **4.2x** | 1.4GB | 9%   |
-| hugo, 70 kLoC               | 15s   | **6.1x** | 1.6GB | 44%  |
-| consul, 127 kLoC            | 58s   | **4x**   | 2.7GB | 41%  |
-| terraform, 190 kLoC         | 2m13s | **1.6x** | 4.8GB | 0%   |
-| go-ethereum, 250 kLoC       | 33s   | **5x**   | 3.6GB | 0%   |
-| go source (`$GOROOT/src`), 1300 kLoC | 2m45s | **2x** | 4.7GB | 0% |
-
-**On average golangci-lint is 4.6 times faster** than gometalinter. Maximum difference is in the
-self-repo: **7.5 times faster**, minimum difference is in terraform source code repo: 1.8 times faster.
-
-On average golangci-lint consumes 26% less memory.
-
-### Why golangci-lint is faster
-
-Golangci-lint directly calls linters (no forking) and reuses 80% of work by parsing program only once.
-Read [this section](#internals) for details.
-
-### Memory Usage of Golangci-lint
-
-A trade-off between memory usage and execution time can be controlled by [`GOGC`](https://golang.org/pkg/runtime/#hdr-Environment_Variables) environment variable.
-Less `GOGC` values trigger garbage collection more frequently and golangci-lint consumes less memory and more CPU. Below is the trade-off table for running on this repo:
-
-|`GOGC`|Peak Memory, GB|Executon Time, s|
-|------|---------------|----------------|
-|`5`   |1.1            |60              |
-|`10`  |1.1            |34              |
-|`20`  |1.3            |25              |
-|`30`  |1.6            |20.2            |
-|`50`  |2.0            |17.1            |
-|`80`  |2.2            |14.1            |
-|`100` (default)|2.2   |13.8            |
-|`off` |3.2            |9.3             |
-
-## Internals
-
-1. Work sharing
-  The key difference with gometalinter is that golangci-lint shares work between specific linters (golint, govet, ...).
-  We don't fork to call specific linter but use its API.
-  For small and medium projects 50-90% of work between linters can be reused.
-
-   * load `[]*packages.Package` by `go/packages` once
-
-      We load program (parsing all files and type-checking) only once for all linters. For the most of linters
-      it's the most heavy operation: it takes 5 seconds on 8 kLoC repo and 11 seconds on `$GOROOT/src`.
-   * build `ssa.Program` once
-
-      Some linters (megacheck, interfacer, unparam) work on SSA representation.
-      Building of this representation takes 1.5 seconds on 8 kLoC repo and 6 seconds on `$GOROOT/src`.
-
-   * parse source code and build AST once
-
-      Parsing one source file takes 200 us on average. Parsing of all files in `$GOROOT/src` takes 2 seconds.
-      Currently we parse each file more than once because it's not the bottleneck. But we already save a lot of
-      extra parsing. We're planning to parse each file only once.
-
-   * walk files and directories once
-
-     It takes 300-1000 ms for `$GOROOT/src`.
-2. Smart linters scheduling
-
-   We schedule linters by a special algorithm which takes estimated execution time into account. It allows
-   to save 10-30% of time when one of heavy linters (megacheck etc) is enabled.
-
-3. Don't fork to run shell commands
-
-All linters are vendored in the `/vendor` folder: their version is fixed, they are builtin
-and you don't need to install them separately.
-
-## Supported Linters
-
-To see a list of supported linters and which linters are enabled/disabled:
-
-```bash
-golangci-lint help linters
-```
-
-### Enabled By Default Linters
-
-- [govet](https://golang.org/cmd/vet/) - Vet examines Go source code and reports suspicious constructs, such as Printf calls whose arguments do not align with the format string
-- [errcheck](https://github.com/kisielk/errcheck) - Errcheck is a program for checking for unchecked errors in go programs. These unchecked errors can be critical bugs in some cases
-- [staticcheck](https://staticcheck.io/) - Staticcheck is a go vet on steroids, applying a ton of static analysis checks
-- [unused](https://github.com/dominikh/go-tools/tree/master/unused) - Checks Go code for unused constants, variables, functions and types
-- [gosimple](https://github.com/dominikh/go-tools/tree/master/simple) - Linter for Go source code that specializes in simplifying a code
-- [structcheck](https://github.com/opennota/check) - Finds unused struct fields
-- [varcheck](https://github.com/opennota/check) - Finds unused global variables and constants
-- [ineffassign](https://github.com/gordonklaus/ineffassign) - Detects when assignments to existing variables are not used
-- [deadcode](https://github.com/remyoudompheng/go-misc/tree/master/deadcode) - Finds unused code
-- typecheck - Like the front-end of a Go compiler, parses and type-checks Go code
-
-### Disabled By Default Linters (`-E/--enable`)
-
-- [bodyclose](https://github.com/timakin/bodyclose) - checks whether HTTP response body is closed successfully
-- [golint](https://github.com/golang/lint) - Golint differs from gofmt. Gofmt reformats Go source code, whereas golint prints out style mistakes
-- [rowserrcheck](https://github.com/jingyugao/rowserrcheck) - checks whether Err of rows is checked successfully
-- [stylecheck](https://github.com/dominikh/go-tools/tree/master/stylecheck) - Stylecheck is a replacement for golint
-- [gosec](https://github.com/securego/gosec) - Inspects source code for security problems
-- [interfacer](https://github.com/mvdan/interfacer) - Linter that suggests narrower interface types
-- [unconvert](https://github.com/mdempsky/unconvert) - Remove unnecessary type conversions
-- [dupl](https://github.com/mibk/dupl) - Tool for code clone detection
-- [goconst](https://github.com/jgautheron/goconst) - Finds repeated strings that could be replaced by a constant
-- [gocyclo](https://github.com/alecthomas/gocyclo) - Computes and checks the cyclomatic complexity of functions
-- [gocognit](https://github.com/uudashr/gocognit) - Computes and checks the cognitive complexity of functions
-- [gofmt](https://golang.org/cmd/gofmt/) - Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification
-- [goimports](https://godoc.org/golang.org/x/tools/cmd/goimports) - Goimports does everything that gofmt does. Additionally it checks unused imports
-- [maligned](https://github.com/mdempsky/maligned) - Tool to detect Go structs that would take less memory if their fields were sorted
-- [depguard](https://github.com/OpenPeeDeeP/depguard) - Go linter that checks if package imports are in a list of acceptable packages
-- [misspell](https://github.com/client9/misspell) - Finds commonly misspelled English words in comments
-- [lll](https://github.com/walle/lll) - Reports long lines
-- [unparam](https://github.com/mvdan/unparam) - Reports unused function parameters
-- [dogsled](https://github.com/alexkohler/dogsled) - Checks assignments with too many blank identifiers (e.g. x, _, _, _, := f())
-- [nakedret](https://github.com/alexkohler/nakedret) - Finds naked returns in functions greater than a specified function length
-- [prealloc](https://github.com/alexkohler/prealloc) - Finds slice declarations that could potentially be preallocated
-- [scopelint](https://github.com/kyoh86/scopelint) - Scopelint checks for unpinned variables in go programs
-- [gocritic](https://github.com/go-critic/go-critic) - The most opinionated Go source code linter
-- [gochecknoinits](https://github.com/leighmcculloch/gochecknoinits) - Checks that no init functions are present in Go code
-- [gochecknoglobals](https://github.com/leighmcculloch/gochecknoglobals) - Checks that no globals are present in Go code
-- [godox](https://github.com/matoous/godox) - Tool for detection of FIXME, TODO and other comment keywords
-- [funlen](https://github.com/ultraware/funlen) - Tool for detection of long functions
-- [whitespace](https://github.com/ultraware/whitespace) - Tool for detection of leading and trailing whitespace
-- [wsl](https://github.com/bombsimon/wsl) - Whitespace Linter - Forces you to use empty lines!
-- [goprintffuncname](https://github.com/jirfag/go-printf-func-name) - Checks that printf-like functions are named with `f` at the end
-- [gomnd](https://github.com/tommy-muehle/go-mnd) - An analyzer to detect magic numbers.
-
-## Configuration
-
-The config file has lower priority than command-line options. If the same bool/string/int option is provided on the command-line
-and in the config file, the option from command-line will be used.
-Slice options (e.g. list of enabled/disabled linters) are combined from the command-line and config file.
-
-To see a list of enabled by your configuration linters:
-
-```bash
-golangci-lint linters
-```
-
-### Command-Line Options
-
-```bash
-golangci-lint run -h
-Usage:
-  golangci-lint run [flags]
-
-Flags:
-      --out-format string              Format of output: colored-line-number|line-number|json|tab|checkstyle|code-climate|junit-xml (default "colored-line-number")
-      --print-issued-lines             Print lines of code with issue (default true)
-      --print-linter-name              Print linter name in issue line (default true)
-      --uniq-by-line                   Make issues output unique by line (default true)
-      --modules-download-mode string   Modules download mode. If not empty, passed as -mod=<mode> to go tools
-      --issues-exit-code int           Exit code when issues were found (default 1)
-      --build-tags strings             Build tags
-      --timeout duration               Timeout for total work (default 1m0s)
-      --tests                          Analyze tests (*_test.go) (default true)
-      --print-resources-usage          Print avg and max memory usage of golangci-lint and total time
-  -c, --config PATH                    Read config from file path PATH
-      --no-config                      Don't read config
-      --skip-dirs strings              Regexps of directories to skip
-      --skip-dirs-use-default          Use or not use default excluded directories:
-                                         - (^|/)vendor($|/)
-                                         - (^|/)third_party($|/)
-                                         - (^|/)testdata($|/)
-                                         - (^|/)examples($|/)
-                                         - (^|/)Godeps($|/)
-                                         - (^|/)builtin($|/)
-                                        (default true)
-      --skip-files strings             Regexps of files to skip
-  -E, --enable strings                 Enable specific linter
-  -D, --disable strings                Disable specific linter
-      --disable-all                    Disable all linters
-  -p, --presets strings                Enable presets (bugs|complexity|format|performance|style|unused) of linters. Run 'golangci-lint linters' to see them. This option implies option --disable-all
-      --fast                           Run only fast linters from enabled linters set (first run won't be fast)
-  -e, --exclude strings                Exclude issue by regexp
-      --exclude-use-default            Use or not use default excludes:
-                                         # errcheck: Almost all programs ignore errors on these functions and in most cases it's ok
-                                         - Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*printf?|os\.(Un)?Setenv). is not checked
-                                       
-                                         # golint: Annoying issue about not having a comment. The rare codebase has such comments
-                                         - (comment on exported (method|function|type|const)|should have( a package)? comment|comment should be of the form)
-                                       
-                                         # golint: False positive when tests are defined in package 'test'
-                                         - func name will be used as test\.Test.* by other packages, and that stutters; consider calling this
-                                       
-                                         # govet: Common false positives
-                                         - (possible misuse of unsafe.Pointer|should have signature)
-                                       
-                                         # staticcheck: Developers tend to write in C-style with an explicit 'break' in a 'switch', so it's ok to ignore
-                                         - ineffective break statement. Did you mean to break out of the outer loop
-                                       
-                                         # gosec: Too many false-positives on 'unsafe' usage
-                                         - Use of unsafe calls should be audited
-                                       
-                                         # gosec: Too many false-positives for parametrized shell calls
-                                         - Subprocess launch(ed with variable|ing should be audited)
-                                       
-                                         # gosec: Duplicated errcheck checks
-                                         - G104
-                                       
-                                         # gosec: Too many issues in popular repos
-                                         - (Expect directory permissions to be 0750 or less|Expect file permissions to be 0600 or less)
-                                       
-                                         # gosec: False positive is triggered by 'src, err := ioutil.ReadFile(filename)'
-                                         - Potential file inclusion via variable
-                                        (default true)
-      --max-issues-per-linter int      Maximum issues count per one linter. Set to 0 to disable (default 50)
-      --max-same-issues int            Maximum count of issues with the same text. Set to 0 to disable (default 3)
-  -n, --new                            Show only new issues: if there are unstaged changes or untracked files, only those changes are analyzed, else only changes in HEAD~ are analyzed.
-                                       It's a super-useful option for integration of golangci-lint into existing large codebase.
-                                       It's not practical to fix all existing issues at the moment of integration: much better to not allow issues in new code.
-                                       For CI setups, prefer --new-from-rev=HEAD~, as --new can skip linting the current patch if any scripts generate unstaged files before golangci-lint runs.
-      --new-from-rev REV               Show only new issues created after git revision REV
-      --new-from-patch PATH            Show only new issues created in git patch with file path PATH
-      --fix                            Fix found issues (if it's supported by the linter)
-  -h, --help                           help for run
-
-Global Flags:
-      --color string              Use color when printing; can be 'always', 'auto', or 'never' (default "auto")
-  -j, --concurrency int           Concurrency (default NumCPU) (default 8)
-      --cpu-profile-path string   Path to CPU profile output file
-      --mem-profile-path string   Path to memory profile output file
-      --trace-path string         Path to trace output file
-  -v, --verbose                   verbose output
-      --version                   Print version
-
-```
-
-### Config File
-
-GolangCI-Lint looks for config files in the following paths from the current working directory:
-
-* `.golangci.yml`
-* `.golangci.toml`
-* `.golangci.json`
-
-GolangCI-Lint also searches for config files in all directories from the directory of the first analyzed path up to the root.
-To see which config file is being used and where it was sourced from run golangci-lint with `-v` option.
-
-Config options inside the file are identical to command-line options.
-You can configure specific linters' options only within the config file (not the command-line).
-
-There is a [`.golangci.example.yml`](https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml) example
-config file with all supported options, their description and default value:
-
-```yaml
-# This file contains all available configuration options
-# with their default values.
-
-# options for analysis running
-run:
-  # default concurrency is a available CPU number
-  concurrency: 4
-
-  # timeout for analysis, e.g. 30s, 5m, default is 1m
-  timeout: 1m
-
-  # exit code when at least one issue was found, default is 1
-  issues-exit-code: 1
-
-  # include test files or not, default is true
-  tests: true
-
-  # list of build tags, all linters use it. Default is empty list.
-  build-tags:
-    - mytag
-
-  # which dirs to skip: issues from them won't be reported;
-  # can use regexp here: generated.*, regexp is applied on full path;
-  # default value is empty list, but default dirs are skipped independently
-  # from this option's value (see skip-dirs-use-default).
-  skip-dirs:
-    - src/external_libs
-    - autogenerated_by_my_lib
-
-  # default is true. Enables skipping of directories:
-  #   vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
-  skip-dirs-use-default: true
-
-  # which files to skip: they will be analyzed, but issues from them
-  # won't be reported. Default value is empty list, but there is
-  # no need to include all autogenerated files, we confidently recognize
-  # autogenerated files. If it's not please let us know.
-  skip-files:
-    - ".*\\.my\\.go$"
-    - lib/bad.go
-
-  # by default isn't set. If set we pass it to "go list -mod={option}". From "go help modules":
-  # If invoked with -mod=readonly, the go command is disallowed from the implicit
-  # automatic updating of go.mod described above. Instead, it fails when any changes
-  # to go.mod are needed. This setting is most useful to check that go.mod does
-  # not need updates, such as in a continuous integration and testing system.
-  # If invoked with -mod=vendor, the go command assumes that the vendor
-  # directory holds the correct copies of dependencies and ignores
-  # the dependency descriptions in go.mod.
-  modules-download-mode: readonly|release|vendor
-
-
-# output configuration options
-output:
-  # colored-line-number|line-number|json|tab|checkstyle|code-climate, default is "colored-line-number"
-  format: colored-line-number
-
-  # print lines of code with issue, default is true
-  print-issued-lines: true
-
-  # print linter name in the end of issue text, default is true
-  print-linter-name: true
-
-  # make issues output unique by line, default is true
-  uniq-by-line: true
-
-
-# all available settings of specific linters
-linters-settings:
-  dogsled:
-    # checks assignments with too many blank identifiers; default is 2
-    max-blank-identifiers: 2
-  dupl:
-    # tokens count to trigger issue, 150 by default
-    threshold: 100
-  errcheck:
-    # report about not checking of errors in type assertions: `a := b.(MyStruct)`;
-    # default is false: such cases aren't reported by default.
-    check-type-assertions: false
-
-    # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
-    # default is false: such cases aren't reported by default.
-    check-blank: false
-
-    # [deprecated] comma-separated list of pairs of the form pkg:regex
-    # the regex is used to ignore names within pkg. (default "fmt:.*").
-    # see https://github.com/kisielk/errcheck#the-deprecated-method for details
-    ignore: fmt:.*,io/ioutil:^Read.*
-
-    # path to a file containing a list of functions to exclude from checking
-    # see https://github.com/kisielk/errcheck#excluding-functions for details
-    exclude: /path/to/file.txt
-  funlen:
-    lines: 60
-    statements: 40
-  gocognit:
-    # minimal code complexity to report, 30 by default (but we recommend 10-20)
-    min-complexity: 10
-  goconst:
-    # minimal length of string constant, 3 by default
-    min-len: 3
-    # minimal occurrences count to trigger, 3 by default
-    min-occurrences: 3
-  gocritic:
-    # Which checks should be enabled; can't be combined with 'disabled-checks';
-    # See https://go-critic.github.io/overview#checks-overview
-    # To check which checks are enabled run `GL_DEBUG=gocritic golangci-lint run`
-    # By default list of stable checks is used.
-    enabled-checks:
-      - rangeValCopy
-
-    # Which checks should be disabled; can't be combined with 'enabled-checks'; default is empty
-    disabled-checks:
-      - regexpMust
-
-    # Enable multiple checks by tags, run `GL_DEBUG=gocritic golangci-lint run` to see all tags and checks.
-    # Empty list by default. See https://github.com/go-critic/go-critic#usage -> section "Tags".
-    enabled-tags:
-      - performance
-
-    settings: # settings passed to gocritic
-      captLocal: # must be valid enabled check name
-        paramsOnly: true
-      rangeValCopy:
-        sizeThreshold: 32
-  gocyclo:
-    # minimal code complexity to report, 30 by default (but we recommend 10-20)
-    min-complexity: 10
-  godox:
-    # report any comments starting with keywords, this is useful for TODO or FIXME comments that
-    # might be left in the code accidentally and should be resolved before merging
-    keywords: # default keywords are TODO, BUG, and FIXME, these can be overwritten by this setting
-      - NOTE
-      - OPTIMIZE # marks code that should be optimized before merging
-      - HACK # marks hack-arounds that should be removed before merging
-  gofmt:
-    # simplify code: gofmt with `-s` option, true by default
-    simplify: true
-  goimports:
-    # put imports beginning with prefix after 3rd-party packages;
-    # it's a comma-separated list of prefixes
-    local-prefixes: github.com/org/project
-  golint:
-    # minimal confidence for issues, default is 0.8
-    min-confidence: 0.8
-  gomnd:
-    settings:
-      mnd:
-        # the list of enabled checks, see https://github.com/tommy-muehle/go-mnd/#checks for description.
-        checks: argument,case,condition,operation,return,assign
-  govet:
-    # report about shadowed variables
-    check-shadowing: true
-
-    # settings per analyzer
-    settings:
-      printf: # analyzer name, run `go tool vet help` to see all analyzers
-        funcs: # run `go tool vet help printf` to see available settings for `printf` analyzer
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
-
-    # enable or disable analyzers by name
-    enable:
-      - atomicalign
-    enable-all: false
-    disable:
-      - shadow
-    disable-all: false
-  depguard:
-    list-type: blacklist
-    include-go-root: false
-    packages:
-      - github.com/sirupsen/logrus
-    packages-with-error-message:
-      # specify an error message to output when a blacklisted package is used
-      - github.com/sirupsen/logrus: "logging is allowed only by logutils.Log"
-  lll:
-    # max line length, lines longer will be reported. Default is 120.
-    # '\t' is counted as 1 character by default, and can be changed with the tab-width option
-    line-length: 120
-    # tab width in spaces. Default to 1.
-    tab-width: 1
-  maligned:
-    # print struct with more effective memory layout or not, false by default
-    suggest-new: true
-  misspell:
-    # Correct spellings using locale preferences for US or UK.
-    # Default is to use a neutral variety of English.
-    # Setting locale to US will correct the British spelling of 'colour' to 'color'.
-    locale: US
-    ignore-words:
-      - someword
-  nakedret:
-    # make an issue if func has more lines of code than this setting and it has naked returns; default is 30
-    max-func-lines: 30
-  prealloc:
-    # XXX: we don't recommend using this linter before doing performance profiling.
-    # For most programs usage of prealloc will be a premature optimization.
-
-    # Report preallocation suggestions only on simple loops that have no returns/breaks/continues/gotos in them.
-    # True by default.
-    simple: true
-    range-loops: true # Report preallocation suggestions on range loops, true by default
-    for-loops: false # Report preallocation suggestions on for loops, false by default
-  rowserrcheck:
-    packages:
-      - github.com/jmoiron/sqlx
-  unparam:
-    # Inspect exported functions, default is false. Set to true if no external program/library imports your code.
-    # XXX: if you enable this setting, unparam will report a lot of false-positives in text editors:
-    # if it's called for subdir of a project it can't find external interfaces. All text editor integrations
-    # with golangci-lint call it on a directory with the changed file.
-    check-exported: false
-  unused:
-    # treat code as a program (not a library) and report unused exported identifiers; default is false.
-    # XXX: if you enable this setting, unused will report a lot of false-positives in text editors:
-    # if it's called for subdir of a project it can't find funcs usages. All text editor integrations
-    # with golangci-lint call it on a directory with the changed file.
-    check-exported: false
-  whitespace:
-    multi-if: false   # Enforces newlines (or comments) after every multi-line if statement
-    multi-func: false # Enforces newlines (or comments) after every multi-line function signature
-  wsl:
-    # If true append is only allowed to be cuddled if appending value is
-    # matching variables, fields or types on line above. Default is true.
-    strict-append: true
-    # Allow calls and assignments to be cuddled as long as the lines have any
-    # matching variables, fields or types. Default is true.
-    allow-assign-and-call: true
-    # Allow multiline assignments to be cuddled. Default is true.
-    allow-multiline-assign: true
-    # Allow declarations (var) to be cuddled.
-    allow-cuddle-declarations: false
-    # Allow trailing comments in ending of blocks
-    allow-trailing-comment: false
-    # Force newlines in end of case at this limit (0 = never).
-    force-case-trailing-whitespace: 0
-
-  # The custom section can be used to define linter plugins to be loaded at runtime. See README doc
-  #  for more info.
-  custom:
-    # Each custom linter should have a unique name.
-     example:
-      # The path to the plugin *.so. Can be absolute or local. Required for each custom linter
-      path: /path/to/example.so
-      # The description of the linter. Optional, just for documentation purposes.
-      description: This is an example usage of a plugin linter.
-      # Intended to point to the repo location of the linter. Optional, just for documentation purposes.
-      original-url: github.com/golangci/example-linter
-
-linters:
-  enable:
-    - megacheck
-    - govet
-  disable:
-    - maligned
-    - prealloc
-  disable-all: false
-  presets:
-    - bugs
-    - unused
-  fast: false
-
-
-issues:
-  # List of regexps of issue texts to exclude, empty list by default.
-  # But independently from this option we use default exclude patterns,
-  # it can be disabled by `exclude-use-default: false`. To list all
-  # excluded by default patterns execute `golangci-lint run --help`
-  exclude:
-    - abcdef
-
-  # Excluding configuration per-path, per-linter, per-text and per-source
-  exclude-rules:
-    # Exclude some linters from running on tests files.
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - dupl
-        - gosec
-
-    # Exclude known linters from partially hard-vendored code,
-    # which is impossible to exclude via "nolint" comments.
-    - path: internal/hmac/
-      text: "weak cryptographic primitive"
-      linters:
-        - gosec
-
-    # Exclude some staticcheck messages
-    - linters:
-        - staticcheck
-      text: "SA9003:"
-
-    # Exclude lll issues for long lines with go:generate
-    - linters:
-        - lll
-      source: "^//go:generate "
-
-  # Independently from option `exclude` we use default exclude patterns,
-  # it can be disabled by this option. To list all
-  # excluded by default patterns execute `golangci-lint run --help`.
-  # Default value for this option is true.
-  exclude-use-default: false
-
-  # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
-  max-issues-per-linter: 0
-
-  # Maximum count of issues with the same text. Set to 0 to disable. Default is 3.
-  max-same-issues: 0
-
-  # Show only new issues: if there are unstaged changes or untracked files,
-  # only those changes are analyzed, else only changes in HEAD~ are analyzed.
-  # It's a super-useful option for integration of golangci-lint into existing
-  # large codebase. It's not practical to fix all existing issues at the moment
-  # of integration: much better don't allow issues in new code.
-  # Default is false.
-  new: false
-
-  # Show only new issues created after git revision `REV`
-  new-from-rev: REV
-
-  # Show only new issues created in git patch with set file path.
-  new-from-patch: path/to/patch/file
-```
-
-It's a [.golangci.yml](https://github.com/golangci/golangci-lint/blob/master/.golangci.yml) config file of this repo: we enable more linters
-than the default and have more strict settings:
-
-```yaml
-linters-settings:
-  depguard:
-    list-type: blacklist
-    packages:
-      # logging is allowed only by logutils.Log, logrus
-      # is allowed to use only in logutils package
-      - github.com/sirupsen/logrus
-    packages-with-error-message:
-      - github.com/sirupsen/logrus: "logging is allowed only by logutils.Log"
-  dupl:
-    threshold: 100
-  funlen:
-    lines: 100
-    statements: 50
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport # https://github.com/go-critic/go-critic/issues/845
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
-      - wrapperFunc
-  gocyclo:
-    min-complexity: 15
-  goimports:
-    local-prefixes: github.com/golangci/golangci-lint
-  golint:
-    min-confidence: 0
-  gomnd:
-    settings:
-      mnd:
-        # don't include the "operation" and "assign"
-        checks: argument,case,condition,return
-  govet:
-    check-shadowing: true
-    settings:
-      printf:
-        funcs:
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
-  lll:
-    line-length: 140
-  maligned:
-    suggest-new: true
-  misspell:
-    locale: US
-
-linters:
-  # please, do not use `enable-all`: it's deprecated and will be removed soon.
-  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
-  disable-all: true
-  enable:
-    - bodyclose
-    - deadcode
-    - depguard
-    - dogsled
-    - dupl
-    - errcheck
-    - funlen
-    - gochecknoinits
-    - goconst
-    - gocritic
-    - gocyclo
-    - gofmt
-    - goimports
-    - golint
-    - gomnd
-    - goprintffuncname
-    - gosec
-    - gosimple
-    - govet
-    - ineffassign
-    - interfacer
-    - lll
-    - misspell
-    - nakedret
-    - rowserrcheck
-    - scopelint
-    - staticcheck
-    - structcheck
-    - stylecheck
-    - typecheck
-    - unconvert
-    - unparam
-    - unused
-    - varcheck
-    - whitespace
-
-  # don't enable:
-  # - gochecknoglobals
-  # - gocognit
-  # - godox
-  # - maligned
-  # - prealloc
-
-issues:
-  # Excluding configuration per-path, per-linter, per-text and per-source
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gomnd
-
-run:
-  skip-dirs:
-    - test/testdata_etc
-    - internal/cache
-    - internal/renameio
-    - internal/robustio
-
-# golangci.com configuration
-# https://github.com/golangci/golangci/wiki/Configuration
-service:
-  golangci-lint-version: 1.23.x # use the fixed version to not introduce new linters unexpectedly
-  prepare:
-    - echo "here I can run custom commands, but no preparation needed for this repo"
-```
-
-## Custom Linters
-Some people and organizations may choose to have custom made linters run as a part of golangci-lint. That functionality 
-is supported through go's plugin library.
-
-### Create a Copy of `golangci-lint` that Can Run with Plugins
-In order to use plugins, you'll need a golangci-lint executable that can run them. The normal version of this project 
-is built with the vendors option, which breaks plugins that have overlapping dependencies.
-
-1. Download [golangci-lint](https://github.com/golangci/golangci-lint) source code
-2. From the projects root directory, run `make vendor_free_build`
-3. Copy the `golangci-lint` executable that was created to your path, project, or other location
-
-### Configure Your Project for Linting
-If you already have a linter plugin available, you can follow these steps to define it's usage in a projects 
-`.golangci.yml` file. An example linter can be found at [here](https://github.com/golangci/example-plugin-linter). If you're looking for 
-instructions on how to configure your own custom linter, they can be found further down.
-
-1. If the project you want to lint does not have one already, copy the [.golangci.yml](https://github.com/golangci/golangci-lint/blob/master/.golangci.yml) to the root directory.
-2. Adjust the yaml to appropriate `linters-settings:custom` entries as so:
-```
-linters-settings:
- custom:
-  example:
-   path: /example.so
-   description: The description of the linter
-   original-url: github.com/golangci/example-linter
-```
-
-That is all the configuration that is required to run a custom linter in your project. Custom linters are enabled by default,
-but abide by the same rules as other linters. If the disable all option is specified either on command line or in 
-`.golangci.yml` files `linters:disable-all: true`, custom linters will be disabled; they can be re-enabled by adding them 
-to the `linters:enable` list, or providing the enabled option on the command line, `golangci-lint run -Eexample`.
-
-### To Create Your Own Custom Linter
-
-Your linter must implement one or more `golang.org/x/tools/go/analysis.Analyzer` structs.
-Your project should also use `go.mod`. All versions of libraries that overlap `golangci-lint` (including replaced 
-libraries) MUST be set to the same version as `golangci-lint`. You can see the versions by running `go version -m golangci-lint`.
-
-You'll also need to create a go file like `plugin/example.go`. This MUST be in the package `main`, and define a 
-variable of name `AnalyzerPlugin`. The `AnalyzerPlugin` instance MUST implement the following interface:
-```
-type AnalyzerPlugin interface {
-    GetAnalyzers() []*analysis.Analyzer
-}
-```
-The type of `AnalyzerPlugin` is not important, but is by convention `type analyzerPlugin struct {}`. See 
-[plugin/example.go](https://github.com/golangci/example-plugin-linter/plugin/example.go) for more info.
-
-To build the plugin, from the root project directory, run `go build -buildmode=plugin plugin/example.go`. This will create a plugin `*.so`
-file that can be copied into your project or another well known location for usage in golangci-lint.
-
-## False Positives
-
-False positives are inevitable, but we did our best to reduce their count. For example, we have a default enabled set of [exclude patterns](#command-line-options). If a false positive occurred you have the following choices:
-
-1. Exclude issue by text using command-line option `-e` or config option `issues.exclude`. It's helpful when you decided to ignore all issues of this type. Also, you can use `issues.exclude-rules` config option for per-path or per-linter configuration.
-2. Exclude this one issue by using special comment `//nolint` (see [the section](#nolint) below).
-3. Exclude issues in path by `run.skip-dirs`, `run.skip-files` or `issues.exclude-rules` config options.
-
-Please create [GitHub Issues here](https://github.com/golangci/golangci-lint/issues/new) if you find any false positives. We will add it to the default exclude list if it's common or we will fix underlying linter.
-
-### Nolint
-
-To exclude issues from all linters use `//nolint`. For example, if it's used inline (not from the beginning of the line) it excludes issues only for this line.
-
-```go
-var bad_name int //nolint
-```
-
-To exclude issues from specific linters only:
-
-```go
-var bad_name int //nolint:golint,unused
-```
-
-To exclude issues for the block of code use this directive on the beginning of a line:
-
-```go
-//nolint
-func allIssuesInThisFunctionAreExcluded() *string {
-  // ...
-}
-
-//nolint:govet
-var (
-  a int
-  b int
-)
-```
-
-Also, you can exclude all issues in a file by:
-
-```go
-//nolint:unparam
-package pkg
-```
-
-You may add a comment explaining or justifying why `//nolint` is being used on the same line as the flag itself:
-
-```go
-//nolint:gocyclo // This legacy function is complex but the team too busy to simplify it
-func someLegacyFunction() *string {
-  // ...
-}
-```
-
-You can see more examples of using `//nolint` in [our tests](https://github.com/golangci/golangci-lint/tree/master/pkg/result/processors/testdata) for it.
-
-Use `//nolint` instead of `// nolint` because machine-readable comments should have no space by Go convention.
-
-## FAQ
-
-**How do you add a custom linter?**
-
-You can integrate it yourself, see this [wiki page](https://github.com/golangci/golangci-lint/wiki/How-to-add-a-custom-linter) with documentation. Or you can create a [GitHub Issue](https://github.com/golangci/golangci-lint/issues/new) and we will integrate when time permits.
-
-**It's cool to use `golangci-lint` when starting a project, but what about existing projects with large codebase? It will take days to fix all found issues**
-
-We are sure that every project can easily integrate `golangci-lint`, even the large one. The idea is to not fix all existing issues. Fix only newly added issue: issues in new code. To do this setup CI (or better use [GolangCI](https://golangci.com)) to run `golangci-lint` with option `--new-from-rev=HEAD~1`. Also, take a look at option `--new`, but consider that CI scripts that generate unstaged files will make `--new` only point out issues in those files and not in the last commit. In that regard `--new-from-rev=HEAD~1` is safer.
-By doing this you won't create new issues in your code and can choose fix existing issues (or not).
-
-**How to use `golangci-lint` in CI (Continuous Integration)?**
-
-You have 2 choices:
-
-1. Use [GolangCI](https://golangci.com): this service is highly integrated with GitHub (issues are commented in the pull request) and uses a `golangci-lint` tool. For configuration use `.golangci.yml` (or toml/json).
-2. Use custom CI: just run `golangci-lint` in CI and check the exit code. If it's non-zero - fail the build. The main disadvantage is that you can't see issues in pull request code and would need to view the build log, then open the referenced source file to see the context.
-
-We don't recommend vendoring `golangci-lint` in your repo: you will get troubles updating `golangci-lint`. Please, use recommended way to install with the shell script: it's very fast.
-
-**Do I need to run `go install`?**
-
-No, you don't need to do it anymore.
-
-**Which go versions are supported**
-Short answer: go 1.12 and newer are officially supported.
-
-Long answer:
-
-1. go < 1.9 isn't supported
-2. go1.9 is officially supported by golangci-lint <= v1.10.2
-3. go1.10 is officially supported by golangci-lint <= 1.15.0.
-4. go1.11 is officially supported by golangci-lint <= 1.17.1.
-5. go1.12+ are officially supported by the latest version of golangci-lint (>= 1.18.0).
-
-**`golangci-lint` doesn't work**
-
-1. Please, ensure you are using the latest binary release.
-2. Run it with `-v` option and check the output.
-3. If it doesn't help create a [GitHub issue](https://github.com/golangci/golangci-lint/issues/new) with the output from the error and #2 above.
-
-**Why running with `--fast` is slow on the first run?**
-Because the first run caches type information. All subsequent runs will be fast.
-Usually this options is used during development on local machine and compilation was already performed.
-
-## Thanks
-
-Thanks to all [contributors](https://github.com/golangci/golangci-lint/graphs/contributors)!
-Thanks to [alecthomas/gometalinter](https://github.com/alecthomas/gometalinter) for inspiration and amazing work.
-Thanks to [bradleyfalzon/revgrep](https://github.com/bradleyfalzon/revgrep) for cool diff tool.
-
-Thanks to developers and authors of used linters:
-- [timakin](https://github.com/timakin)
-- [kisielk](https://github.com/kisielk)
-- [golang](https://github.com/golang)
-- [jingyugao](https://github.com/jingyugao)
-- [dominikh](https://github.com/dominikh)
-- [securego](https://github.com/securego)
-- [opennota](https://github.com/opennota)
-- [mvdan](https://github.com/mvdan)
-- [mdempsky](https://github.com/mdempsky)
-- [gordonklaus](https://github.com/gordonklaus)
-- [mibk](https://github.com/mibk)
-- [jgautheron](https://github.com/jgautheron)
-- [remyoudompheng](https://github.com/remyoudompheng)
-- [alecthomas](https://github.com/alecthomas)
-- [uudashr](https://github.com/uudashr)
-- [OpenPeeDeeP](https://github.com/OpenPeeDeeP)
-- [client9](https://github.com/client9)
-- [walle](https://github.com/walle)
-- [alexkohler](https://github.com/alexkohler)
-- [kyoh86](https://github.com/kyoh86)
-- [go-critic](https://github.com/go-critic)
-- [leighmcculloch](https://github.com/leighmcculloch)
-- [matoous](https://github.com/matoous)
-- [ultraware](https://github.com/ultraware)
-- [bombsimon](https://github.com/bombsimon)
-- [jirfag](https://github.com/jirfag)
-- [tommy-muehle](https://github.com/tommy-muehle)
-
-## Changelog
-
-Follow the news and releases on our [twitter](https://twitter.com/golangci) and our [blog](https://medium.com/golangci).
-There is the most valuable changes log:
-
-### September 2019
-
-1. Support go1.13
-2. Add new linters: `funlen`, `whitespace` (with auto-fix) and `godox`
-3. Update linters: `gochecknoglobals`, `scopelint`, `gosec`
-4. Provide pre-built binary for ARM and FreeBSD
-5. 2. Fix false-positives in `unused`
-6. Support `--skip-dirs-use-default`
-7. Add support for bash completions
-
-### July 2019
-
-1. Fix parallel writes race condition
-2. Update bodyclose with fixed panic
-
-### June 2019
-
-1. Treat Go source files as a plain text by `misspell`: it allows detecting issues in strings, variable names, etc.
-2. Implement richer and more stable auto-fix of `misspell` issues.
-
-### May 2019
-
-1. Add [bodyclose](https://github.com/timakin/bodyclose) linter.
-2. Support junit-xml output.
-
-### April 2019
-
-1. Update go-critic, new checkers were added: badCall, dupImports, evalOrder, newDeref
-2. Fix staticcheck panic on packages that do not compile
-3. Make install script work on Windows
-4. Fix compatibility with the latest x/tools version and update golang.org/x/tools
-5. Correct import path of module sourcegraph/go-diff
-6. Fix `max-issues-per-linter` name
-7. Fix linting of preprocessed files (e.g. `*.qtpl.go`, goyacc)
-8. Enable auto-fixing when running via pre-commit
-
-### March 2019
-
-1. Support the newest `go vet` (with `go/analysis`)
-2. Support configuration of `go vet`: e.g. you can set print functions by `linters-settings.govet.settings.printf.funcs`
-3. Update megacheck (staticcheck) to 2019.1.1
-4. Add [information](https://github.com/golangci/golangci-lint#memory-usage-of-golangci-lint) about controlling space-time trade-off into README
-5. Exclude issues by source code line regexp by `issues.exclude-rules[i].source`
-6. Build and test on go 1.12
-7. Support `--color` option
-8. Update x/tools to fix c++ issues
-9. Include support for log level
-10. Sort linters list in help commands
-
-## Debug
-
-You can see a verbose output of linter by using `-v` option.
-
-If you would like to see more detailed logs you can set environment variable `GL_DEBUG` to debug `golangci-lint`.
-It's value is a list of debug tags. For example, `GL_DEBUG=loader,gocritic golangci-lint run`.
-Existing debug tags:
-
-1. `gocritic` - debug `go-critic` linter;
-2. `env` - debug `go env` command;
-3. `loader` - debug packages loading (including `go/packages` internal debugging);
-4. `autogen_exclude` - debug a filter excluding autogenerated source code;
-5. `nolint` - debug a filter excluding issues by `//nolint` comments.
-
-## Future Plans
-
-1. Upstream all changes of forked linters.
-2. Make it easy to write own linter/checker: it should take a minimum code, have perfect documentation, debugging and testing tooling.
-3. Speed up SSA loading: on-disk cache and existing code profiling-optimizing.
-4. Analyze (don't only filter) only new code: analyze only changed files and dependencies, make incremental analysis, caches.
-5. Smart new issues detector: don't print existing issues on changed lines.
-6. Minimize false-positives by fixing linters and improving testing tooling.
-7. Automatic issues fixing (code rewrite, refactoring) where it's possible.
-8. Documentation for every issue type.
-
-## Contact Information
-
-Slack channel: [#golangci-lint](https://slack.com/share/IS0TDK8RG/TEKQWjTZXxfK9Ta2G5HrnsMY/enQtODg0OTMxNjU0ODY2LWUyMTQ3NDc2MmNlNGU3NTNhYWE0Nzc3MjUyZjkxZWI3YjI5ODMwNDA1NTU3MmM2Yzc5ZjQyYTFkNThlODllN2Y).
-
-You can contact the [author](https://github.com/jirfag) of GolangCI-Lint
-by [denis@golangci.com](mailto:denis@golangci.com). Follow the news and releases on our [twitter](https://twitter.com/golangci) and our [blog](https://medium.com/golangci).
-
-## License Scan
-
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgolangci%2Fgolangci-lint.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgolangci%2Fgolangci-lint?ref=badge_large)
+[![Github Releases Stats of golangci-lint](https://img.shields.io/github/downloads/golangci/golangci-lint/total.svg?logo=github)](https://somsubhra.com/github-release-stats/?username=golangci&repository=golangci-lint)
+
+## Contributors
+
+This project exists thanks to all the people who contribute. [How to contribute](https://golangci-lint.run/contributing/quick-start/).
+
+<!-- BEGIN AUTOGENERATED CONTRIBUTORS -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+### Core Team
+
+<details>
+<summary>About core team</summary>
+
+The GolangCI Core Team is a group of contributors that have demonstrated a lasting enthusiasm for the project and community.
+The GolangCI Core Team has GitHub admin privileges on the repo.
+
+#### Responsibilities
+The Core Team has the following responsibilities:
+
+1. Being available to answer high-level questions about vision and future.
+2. Being available to review longstanding/forgotten pull requests.
+3. Occasionally check issues, offer input, and categorize with GitHub issue labels.
+4. Looking out for up-and-coming members of the GolangCI community who might want to serve as Core Team members.
+5. Note that the Core Team – and all GolangCI contributors – are open source volunteers; membership on the Core Team is expressly not an obligation. The Core Team is distinguished as leaders in the community and while they are a good group to turn to when someone needs an answer to a question, they are still volunteering their time, and may not be available to help immediately.
+
+</details>
+
+<table>
+<tr>
+  <td align="center"><a href="https://disaev.me?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/4648736?u=8c4976f3d4506b780533feacae77324505e8fa1c&v=4" width="100px;" alt=""/><br /><sub><b>Denis Isaev</b></sub></a></td>
+  <td align="center"><a href="https://keybase.io/ernado?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/866677?u=d349f6974fbf43763fa0c8f37c230e2a7ed28071&v=4" width="100px;" alt=""/><br /><sub><b>Aleksandr Razumov</b></sub></a></td>
+</tr>
+</table>
+
+### Team
+
+<table>
+<tr>
+  <td align="center"><a href="tammach.dev?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/9019229?u=434a8656f0f0917d35fe56322c81811036ec0e0c&v=4" width="100px;" alt=""/><br /><sub><b>Tam Mach</b></sub></a></td>
+  <td align="center"><a href="tpounds.com?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/195041?u=cab053161e59fece04c051169b59882b299ce97a&v=4" width="100px;" alt=""/><br /><sub><b>Trevor Pounds</b></sub></a></td>
+  <td align="center"><a href="vilgelm.com?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/523825?u=0d68efb10b9bbd957a2cf71c6633cf24f2e63106&v=4" width="100px;" alt=""/><br /><sub><b>Sergey Vilgelm</b></sub></a></td>
+  <td align="center"><a href="https://sawert.se?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/3248948?u=e0241adee6c5b4f80c0cd17559dadbe8065754cf&v=4" width="100px;" alt=""/><br /><sub><b>Simon Sawert</b></sub></a></td>
+  <td align="center"><a href="https://critical.today?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/939646?u=9e11cf6d10e95c7b7f23b2a0199149139b387111&v=4" width="100px;" alt=""/><br /><sub><b>@iwankgb</b></sub></a></td>
+  <td align="center"><a href="https://github.com/daixiang0?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/26538619?u=6261612ded324edb4ce57dce98e40413276aeb74&v=4" width="100px;" alt=""/><br /><sub><b>Xiang Dai</b></sub></a></td>
+  <td align="center"><a href="ldez.github.io/?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/5674651?u=45f0e097891f1e7e0c45c5224dcce11c867038af&v=4" width="100px;" alt=""/><br /><sub><b>Ludovic Fernandez</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="http://saschagrunert.de?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/695473?u=9b613ef9d039ad97b26b9bb2c72cdfc528a716cc&v=4" width="100px;" alt=""/><br /><sub><b>Sascha Grunert</b></sub></a></td>
+  <td align="center"><a href="https://github.com/ashanbrown?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/1858046?u=0f76832b272abc39282bac53c5507c1fc0703464&v=4" width="100px;" alt=""/><br /><sub><b>Andrew Shannon Brown</b></sub></a></td>
+  <td align="center"><a href="https://github.com/ryancurrah?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/6209771?u=9d81ec835f9d3b4bc096422950567b213cea1098&v=4" width="100px;" alt=""/><br /><sub><b>Ryan Currah</b></sub></a></td>
+  <td align="center"><a href="https://github.com/denis-tingajkin?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/49399980?u=48d29dc400ebbc24772943304b331f05d6c404df&v=4" width="100px;" alt=""/><br /><sub><b>Denis Tingaikin</b></sub></a></td>
+  <td align="center"><a href="https://dkrivak.me?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/11755173?v=4" width="100px;" alt=""/><br /><sub><b>Denis Krivak</b></sub></a></td>
+  <td align="center"><a href="https://www.linkedin.com/in/ducovanamstel?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/896592?u=d137ca0926c6e2a865f777053b8ade2e893ff80b&v=4" width="100px;" alt=""/><br /><sub><b>Duco van Amstel</b></sub></a></td>
+  <td align="center"><a href="https://pierredurand.fr?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/131535?v=4" width="100px;" alt=""/><br /><sub><b>Pierre Durand</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://willd.io?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/6287275?u=58d7a50b67e7a04e26bcc85c670cf84230f9fe18&v=4" width="100px;" alt=""/><br /><sub><b>Will Dixon</b></sub></a></td>
+  <td align="center"><a href="https://www.linkedin.com/in/dlopbec/?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/5780637?u=6d93eaeff6f75facf5eeadb7d1a735ec9483f181&v=4" width="100px;" alt=""/><br /><sub><b>David Lobe</b></sub></a></td>
+  <td align="center"><a href="http://dzx.cz?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/15747583?u=ec61c760d3f87574d425323cbe7bf5194516b9eb&v=4" width="100px;" alt=""/><br /><sub><b>Matouš Dzivjak</b></sub></a></td>
+  <td align="center"><a href="http://swapoff.org?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/41767?v=4" width="100px;" alt=""/><br /><sub><b>Alec Thomas</b></sub></a></td>
+  <td align="center"><a href="https://melvin.la?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/275508?u=4c1869ff67a365968482e96400e62d7677820abc&v=4" width="100px;" alt=""/><br /><sub><b>Melvin</b></sub></a></td>
+  <td align="center"><a href="https://about.me/alexey.palazhchenko?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/11512?v=4" width="100px;" alt=""/><br /><sub><b>Alexey Palazhchenko</b></sub></a></td>
+  <td align="center"><a href="https://github.com/jwilner?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/1879661?u=d5fd87311dd118b3f6044f6d3644ebe6dbcc222c&v=4" width="100px;" alt=""/><br /><sub><b>Joe Wilner</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="http://ksoichiro.blogspot.com/?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/801987?v=4" width="100px;" alt=""/><br /><sub><b>Soichiro Kashima</b></sub></a></td>
+  <td align="center"><a href="https://github.com/uudashr?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/166053?u=0ccd812adf8125062b674494a4c912894206d27c&v=4" width="100px;" alt=""/><br /><sub><b>Nuruddin Ashr</b></sub></a></td>
+  <td align="center"><a href="https://github.com/nishanths?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/6028224?u=a92c24895e31038f41ba0c0798f642d29dfc83ca&v=4" width="100px;" alt=""/><br /><sub><b>@nishanths</b></sub></a></td>
+  <td align="center"><a href="https://github.com/butuzov?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/651824?u=6d901cb2d69a34896322733a5c0eb44982f3c61e&v=4" width="100px;" alt=""/><br /><sub><b>Oleg Butuzov</b></sub></a></td>
+  <td align="center"><a href="https://github.com/theckman?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/787332?u=e95e2c72123a59f93c1a7fd614c99f3eab3b18f1&v=4" width="100px;" alt=""/><br /><sub><b>Tim Heckman</b></sub></a></td>
+  <td align="center"><a href="https://github.com/invidian?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/16539896?u=bc6badcf4846d545738854733a5c1bd044fd9e26&v=4" width="100px;" alt=""/><br /><sub><b>Mateusz Gozdek</b></sub></a></td>
+  <td align="center"><a href="https://github.com/ryboe?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/1250684?v=4" width="100px;" alt=""/><br /><sub><b>Ryan Boehning</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://kortschak.io/?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/275221?u=afde66b960b9f3326fca83c2fce3e6758a58d6de&v=4" width="100px;" alt=""/><br /><sub><b>Dan Kortschak</b></sub></a></td>
+  <td align="center"><a href="https://lukeshu.com?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/90273?v=4" width="100px;" alt=""/><br /><sub><b>Luke Shumaker</b></sub></a></td>
+  <td align="center"><a href="https://github.com/Zamiell?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/5511220?u=f8b0d15d0e5efe94463cff21f1f2b85df14c66b1&v=4" width="100px;" alt=""/><br /><sub><b>James</b></sub></a></td>
+  <td align="center"><a href="http://rski.github.io?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/2960312?u=f3c945c565cfe8415bb83a1e6e2057f6832d2f3e&v=4" width="100px;" alt=""/><br /><sub><b>Romanos</b></sub></a></td>
+  <td align="center"><a href="https://github.com/aneeshusa?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/2085567?v=4" width="100px;" alt=""/><br /><sub><b>Aneesh Agrawal</b></sub></a></td>
+  <td align="center"><a href="https://github.com/vovapi?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/278946?u=31e14b2d2ba4b5d039d20292bff788aed8f114be&v=4" width="100px;" alt=""/><br /><sub><b>Vladimir Evgrafov</b></sub></a></td>
+  <td align="center"><a href="http://qiita.com/sonatard/?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/1586910?u=a55afe04467991530d0e152ded35a2359b973f5e&v=4" width="100px;" alt=""/><br /><sub><b>sonata</b></sub></a></td>
+</tr>
+</table>
+
+<details>
+<summary>And 176 more our team members</summary>
+
+<table>
+<tr>
+  <td align="center"><a href="https://github.com/ZYunH?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/18065074?u=fa39a7103fcc35bd8675812be89d328f3004e376&v=4" width="100px;" alt=""/><br /><sub><b>ZhangYunHao</b></sub></a></td>
+  <td align="center"><a href="https://github.com/odidev?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/40816837?u=006db7f382c579d86c6649cfad96c04f54b8d222&v=4" width="100px;" alt=""/><br /><sub><b>@odidev</b></sub></a></td>
+  <td align="center"><a href="https://fuyu.moe/members/nisevoid?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/3254486?v=4" width="100px;" alt=""/><br /><sub><b>NiseVoid</b></sub></a></td>
+  <td align="center"><a href="http://siobud.com?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/1302304?v=4" width="100px;" alt=""/><br /><sub><b>Sean DuBois</b></sub></a></td>
+  <td align="center"><a href="http://www.neglostyti.com?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/2631366?v=4" width="100px;" alt=""/><br /><sub><b>Viktoras</b></sub></a></td>
+  <td align="center"><a href="https://github.com/amenzhinsky?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/1308953?u=07298a8c5d59c5637f31f30a3a40560b9475669d&v=4" width="100px;" alt=""/><br /><sub><b>Aliaksandr Mianzhynski</b></sub></a></td>
+  <td align="center"><a href="https://github.com/dahankzter?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/171091?v=4" width="100px;" alt=""/><br /><sub><b>Henrik Johansson</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://github.com/System-Glitch?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/7251668?u=83aea13a141cfeb32095d5aa204c055ae4a11f7b&v=4" width="100px;" alt=""/><br /><sub><b>SystemGlitch</b></sub></a></td>
+  <td align="center"><a href="https://johnstarich.com?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/1009441?u=76ecc9848dd25d93f0722b077439806dac6e25b9&v=4" width="100px;" alt=""/><br /><sub><b>John Starich</b></sub></a></td>
+  <td align="center"><a href="https://github.com/zchee?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/6366270?u=b3b4c30edcd4ad8fe5da44faacbd1d70a8c836f5&v=4" width="100px;" alt=""/><br /><sub><b>Koichi Shiraishi</b></sub></a></td>
+  <td align="center"><a href="https://www.bartfokker.com?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/9822478?u=baf572cc0a5de3027ab0ce6a3ef42e8cbd02df36&v=4" width="100px;" alt=""/><br /><sub><b>Bart</b></sub></a></td>
+  <td align="center"><a href="https://agniva.me?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/1774000?u=2d77ef2b812cee7dd2dfd8f2709dcfad8b8ae539&v=4" width="100px;" alt=""/><br /><sub><b>Agniva De Sarker</b></sub></a></td>
+  <td align="center"><a href="https://dev.to/vearutop?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/1381436?v=4" width="100px;" alt=""/><br /><sub><b>Viacheslav Poturaev</b></sub></a></td>
+  <td align="center"><a href="https://github.com/dbraley?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/2067019?u=47d3d161a65b877714779c39d2eb6dc686d427ec&v=4" width="100px;" alt=""/><br /><sub><b>David Braley</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://twitter.com/quasilyte?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/6286655?u=241bad04b0828f5a67e561a4cd08edf823633972&v=4" width="100px;" alt=""/><br /><sub><b>Iskander (Alex) Sharipov</b></sub></a></td>
+  <td align="center"><a href="https://github.com/kunwardeep?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/13211086?u=d7eefb203f6ae0d66392ed4c874be785c1acc3d3&v=4" width="100px;" alt=""/><br /><sub><b>Kunwardeep</b></sub></a></td>
+  <td align="center"><a href="https://github.com/srenatus?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/870638?u=4607741d467654d0c0643043a64da994df94b76f&v=4" width="100px;" alt=""/><br /><sub><b>Stephan Renatus</b></sub></a></td>
+  <td align="center"><a href="https://github.com/diegs?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/74719?v=4" width="100px;" alt=""/><br /><sub><b>Diego Pontoriero</b></sub></a></td>
+  <td align="center"><a href="https://github.com/alexec?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/1142830?u=8e076383ad6ec7081a613b4e276f6a28caa27c5a&v=4" width="100px;" alt=""/><br /><sub><b>Alex Collins</b></sub></a></td>
+  <td align="center"><a href="https://nakabonne.dev?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/19730728?u=88c465f1caf239c1852208116593939c22312c13&v=4" width="100px;" alt=""/><br /><sub><b>Ryo Nakao</b></sub></a></td>
+  <td align="center"><a href="https://github.com/dahu33?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/2038888?u=d4ab9e715b894d12a6b4cef9b66bc81145126dd4&v=4" width="100px;" alt=""/><br /><sub><b>Pierre R</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://tommy-muehle.io?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/1351840?u=e67e63465607260d9e486875ac8f9dbb299c08f9&v=4" width="100px;" alt=""/><br /><sub><b>Tommy Mühle</b></sub></a></td>
+  <td align="center"><a href="https://github.com/thaJeztah?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/1804568?u=ebc86d007fefd2b388d2a8da5f0e3d6f239ede2f&v=4" width="100px;" alt=""/><br /><sub><b>Sebastiaan van Stijn</b></sub></a></td>
+  <td align="center"><a href="https://github.com/Dominik-K?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/5795847?u=e32b349860f30b6d08dd361399df310ab4bbf492&v=4" width="100px;" alt=""/><br /><sub><b>@Dominik-K</b></sub></a></td>
+  <td align="center"><a href="https://ferhatelmas.com?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/648018?v=4" width="100px;" alt=""/><br /><sub><b>ferhat elmas</b></sub></a></td>
+  <td align="center"><a href="https://github.com/sebastien-rosset?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/16657278?v=4" width="100px;" alt=""/><br /><sub><b>Sebastien Rosset</b></sub></a></td>
+  <td align="center"><a href="twitter.com/migueljimeno96?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/6826244?u=03bcd0f7f342886d3abc5281311c932e832b3146&v=4" width="100px;" alt=""/><br /><sub><b>M. Ángel Jimeno</b></sub></a></td>
+  <td align="center"><a href="https://github.com/crsdrw?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/811010?v=4" width="100px;" alt=""/><br /><sub><b>Chris Drew</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="http://teivah.io?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/934784?u=a205b19f43dc3f90c3cbf5b1d6198328c2dff6c3&v=4" width="100px;" alt=""/><br /><sub><b>Teiva Harsanyi</b></sub></a></td>
+  <td align="center"><a href="https://github.com/csilvers?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/1445223?v=4" width="100px;" alt=""/><br /><sub><b>Craig Silverstein</b></sub></a></td>
+  <td align="center"><a href="entgo.io?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/7413593?u=bd1180bdbb558d7f74be9e0a0a840529b1442c1e&v=4" width="100px;" alt=""/><br /><sub><b>Ariel Mashraki</b></sub></a></td>
+  <td align="center"><a href="https://github.com/idenx?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/1843231?v=4" width="100px;" alt=""/><br /><sub><b>Denis Isaev</b></sub></a></td>
+  <td align="center"><a href="http://twpayne.blogspot.com/?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/6942?u=227a4496aba8d3f526c53bdb6aa7713b22c56906&v=4" width="100px;" alt=""/><br /><sub><b>Tom Payne</b></sub></a></td>
+  <td align="center"><a href="https://github.com/fsouza?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/108725?u=6a38e65fb41c3e60fd85b028d30120562ddc0f85&v=4" width="100px;" alt=""/><br /><sub><b>francisco souza</b></sub></a></td>
+  <td align="center"><a href="https://www.pedanticorderliness.com?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/343979?u=6443fee0e543d22b07b02edf0ed8fb1ce4943b5a&v=4" width="100px;" alt=""/><br /><sub><b>Ryan Olds</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://www.suezawa.net/?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/1150301?u=ef7565231d0940a9bcf4b52496268cb56773ba0a&v=4" width="100px;" alt=""/><br /><sub><b>Hiroki Suezawa</b></sub></a></td>
+  <td align="center"><a href="https://github.com/jfrabaute?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/100247?v=4" width="100px;" alt=""/><br /><sub><b>Fabrice</b></sub></a></td>
+  <td align="center"><a href="https://github.com/elliots?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/622455?v=4" width="100px;" alt=""/><br /><sub><b>☃ Elliot Shepherd</b></sub></a></td>
+  <td align="center"><a href="https://github.com/cblecker?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/1431969?v=4" width="100px;" alt=""/><br /><sub><b>Christoph Blecker</b></sub></a></td>
+  <td align="center"><a href="http://immutables.pl?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/909896?u=8c37517f61b02e529477ea1e68e52b453d849312&v=4" width="100px;" alt=""/><br /><sub><b>Mateusz Bilski</b></sub></a></td>
+  <td align="center"><a href="https://github.com/jingyugao?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/16934055?u=16d5d4b4b1574103cd1aaea399b236ae002055b2&v=4" width="100px;" alt=""/><br /><sub><b>gaojingyu</b></sub></a></td>
+  <td align="center"><a href="https://github.com/RX14?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/2788811?u=af7e6311b7c6a7288c691caaccd8d9bbe5978967&v=4" width="100px;" alt=""/><br /><sub><b>Stephanie Wilde-Hobbs</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="http://www.twitter.com/corylanou?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/585100?u=7a1c046e387bdd6358e970e75a9f8ff06d0cf75c&v=4" width="100px;" alt=""/><br /><sub><b>Cory LaNou</b></sub></a></td>
+  <td align="center"><a href="https://lukasmalkmus.io?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/9931588?u=51de6132f5f0e8f88aedf265a5205d9a91f4e1aa&v=4" width="100px;" alt=""/><br /><sub><b>Lukas Malkmus</b></sub></a></td>
+  <td align="center"><a href="https://github.com/vitalyisaev2?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/5507054?u=a6015f53f3ce999d065218ecf43242f11b6c72ad&v=4" width="100px;" alt=""/><br /><sub><b>Vitaly Isaev</b></sub></a></td>
+  <td align="center"><a href="https://kilabit.info?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/43306?v=4" width="100px;" alt=""/><br /><sub><b>Shulhan</b></sub></a></td>
+  <td align="center"><a href="https://renatosuero.dev/?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/1093214?u=c37ab360f4fa3a6c7f168aaf706e8a47323dc101&v=4" width="100px;" alt=""/><br /><sub><b>Renato Suero</b></sub></a></td>
+  <td align="center"><a href="https://github.com/bvwells?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/22873967?u=033f18ad6e723a44fb01eed9e3a4665457de5636&v=4" width="100px;" alt=""/><br /><sub><b>Ben Wells</b></sub></a></td>
+  <td align="center"><a href="https://github.com/maratori?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/16486128?v=4" width="100px;" alt=""/><br /><sub><b>Marat Reymers</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://github.com/bflad?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/189114?v=4" width="100px;" alt=""/><br /><sub><b>Brian Flad</b></sub></a></td>
+  <td align="center"><a href="https://github.com/grongor?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/972493?v=4" width="100px;" alt=""/><br /><sub><b>Jakub Chábek</b></sub></a></td>
+  <td align="center"><a href="https://github.com/tdakkota?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/15220500?u=41aad36b4fcc340495e2d1d0193255e4010e6a59&v=4" width="100px;" alt=""/><br /><sub><b>tdakkota</b></sub></a></td>
+  <td align="center"><a href="https://github.com/ewohltman?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/5953186?u=bf31ce63008802393b3b58c3bd84b8dae76b3946&v=4" width="100px;" alt=""/><br /><sub><b>Eric Wohltman</b></sub></a></td>
+  <td align="center"><a href="http://me.gsora.xyz?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/145909?u=d16caa31322cbaaf401f76ad7030f9743dfb4e4a&v=4" width="100px;" alt=""/><br /><sub><b>Gianguido Sora'</b></sub></a></td>
+  <td align="center"><a href="http://www.snowfrog.net?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/56102?u=39088fc794a8635849e06ba6e8a5ef8a75b194cf&v=4" width="100px;" alt=""/><br /><sub><b>Sonia Hamilton</b></sub></a></td>
+  <td align="center"><a href="https://github.com/derElektrobesen?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/4015637?u=8020c4cb1c123fe3ec6f393ea75b1927e92565a3&v=4" width="100px;" alt=""/><br /><sub><b>Berezhnoy Pavel</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="leduc.uk?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/55436491?v=4" width="100px;" alt=""/><br /><sub><b>Henry</b></sub></a></td>
+  <td align="center"><a href="https://aofeisheng.com?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/5037285?u=2f1c2a9317d995c4a84461d5197c552ab0d89e43&v=4" width="100px;" alt=""/><br /><sub><b>Aofei Sheng</b></sub></a></td>
+  <td align="center"><a href="https://github.com/mxpv?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/865334?u=a47007c3fc95832646d2c935da12aaff81a48ca3&v=4" width="100px;" alt=""/><br /><sub><b>Maksym Pavlenko</b></sub></a></td>
+  <td align="center"><a href="https://github.com/chappjc?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/9373513?u=e78e21f230dd575a53a060c37dee051806ae0572&v=4" width="100px;" alt=""/><br /><sub><b>Jonathan Chappelow</b></sub></a></td>
+  <td align="center"><a href="http://sitano.github.io/?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/564610?u=1830fc4bffb6829093a7f4404ee581c43d909c36&v=4" width="100px;" alt=""/><br /><sub><b>Ivan</b></sub></a></td>
+  <td align="center"><a href="https://github.com/dhui?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/896205?u=3e4fbfd18cabace9d5f7c72b7e1da12dcce5b955&v=4" width="100px;" alt=""/><br /><sub><b>Dale Hui</b></sub></a></td>
+  <td align="center"><a href="linkedin.com/in/ofabry?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/32484950?u=b1dd24de988ecfb2b60c94de997b9110a103ae80&v=4" width="100px;" alt=""/><br /><sub><b>Ondrej Fabry</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://github.com/proton-ab?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/25139420?u=53918e67ce92a25351b1ea2ee9ce98435bea0cc8&v=4" width="100px;" alt=""/><br /><sub><b>proton</b></sub></a></td>
+  <td align="center"><a href="markwalther.ch?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/5138316?u=abf836167fb8e5131459b17b6961e20126338a47&v=4" width="100px;" alt=""/><br /><sub><b>Markus</b></sub></a></td>
+  <td align="center"><a href="https://github.com/laverya?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/2318911?u=12f6803204811ffd8ce33c1fef0281554fdcbb20&v=4" width="100px;" alt=""/><br /><sub><b>Andrew Lavery</b></sub></a></td>
+  <td align="center"><a href="https://kishaningithub.github.io/?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/763760?u=55a5f3e937025e54e2736ca1fc38f0ab3788527f&v=4" width="100px;" alt=""/><br /><sub><b>Kishan B</b></sub></a></td>
+  <td align="center"><a href="https://github.com/kulti?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/1286683?v=4" width="100px;" alt=""/><br /><sub><b>Aleksey Bakin</b></sub></a></td>
+  <td align="center"><a href="https://twitter.com/tariq1890?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/2658224?u=5719f58847e3414945290592663045c82b04b272&v=4" width="100px;" alt=""/><br /><sub><b>Tariq Ibrahim</b></sub></a></td>
+  <td align="center"><a href="https://github.com/pstibrany?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/895919?v=4" width="100px;" alt=""/><br /><sub><b>Peter Štibraný</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://github.com/kaka19ace?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/1320568?u=9f02e3ae234ea1e76a3682ada8166c905104f555&v=4" width="100px;" alt=""/><br /><sub><b>kaixiang zhong</b></sub></a></td>
+  <td align="center"><a href="https://github.com/ced42?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/17880812?v=4" width="100px;" alt=""/><br /><sub><b>@ced42</b></sub></a></td>
+  <td align="center"><a href="https://github.com/dgsb?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/5495748?v=4" width="100px;" alt=""/><br /><sub><b>David Bariod</b></sub></a></td>
+  <td align="center"><a href="https://github.com/beono?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/539474?u=6a91ec994f805519330015aa6251677a307ada59&v=4" width="100px;" alt=""/><br /><sub><b>Eldar Rakhimberdin</b></sub></a></td>
+  <td align="center"><a href="https://blog.schoentoon.blue?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/417618?u=294670670fd504a353586a57b32cf0fe4843f8eb&v=4" width="100px;" alt=""/><br /><sub><b>Toon Schoenmakers</b></sub></a></td>
+  <td align="center"><a href="https://github.com/cezarsa?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/11041?u=cde690e3dd7a6ebf895e11f3ff144b27f8fcb46c&v=4" width="100px;" alt=""/><br /><sub><b>Cezar Sá Espinola</b></sub></a></td>
+  <td align="center"><a href="https://github.com/benpaxton-hf?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/24317933?v=4" width="100px;" alt=""/><br /><sub><b>Ben Paxton</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://github.com/a-kuchin?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/44059234?u=9ebb304fb79a5359199738bfa08a0c98a0d28090&v=4" width="100px;" alt=""/><br /><sub><b>Andrey Kuchin</b></sub></a></td>
+  <td align="center"><a href="https://connoradams.co.uk?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/10026538?u=532bda717283aa1bba2d47f74b19107787fead82&v=4" width="100px;" alt=""/><br /><sub><b>Connor Adams</b></sub></a></td>
+  <td align="center"><a href="https://draveness.me/?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/6493255?u=63f81c96cc52db210f104df233899342b280a2e2&v=4" width="100px;" alt=""/><br /><sub><b>Draven</b></sub></a></td>
+  <td align="center"><a href="https://martins.irbe.co.uk?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/13367583?u=aa82d43331fd575f1ff3cf039aaaeb9913e63dc3&v=4" width="100px;" alt=""/><br /><sub><b>Martins Irbe</b></sub></a></td>
+  <td align="center"><a href="https://jawa.dev?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/194275?u=afa97022f150dbd6625f5a6a69fd74e6204a4c1b&v=4" width="100px;" alt=""/><br /><sub><b>Joshua Rubin</b></sub></a></td>
+  <td align="center"><a href="https://kyoh86.dev?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/5582459?u=062f9074b6d432f073b7e09940e70fc1c092e072&v=4" width="100px;" alt=""/><br /><sub><b>Kyoichiro Yamada</b></sub></a></td>
+  <td align="center"><a href="https://brito.com.br?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/7620947?u=1a38797fbcd5e0b847cbbffc2b8a9e6e281da93d&v=4" width="100px;" alt=""/><br /><sub><b>Rodrigo Brito</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://funloop.org?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/725613?u=7e1ec57b59f6f93d3e94d9b9d2473f8bdd89ba0d&v=4" width="100px;" alt=""/><br /><sub><b>Linus Arver</b></sub></a></td>
+  <td align="center"><a href="http://stainlessed.co.uk?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/151272?u=8a3688637befe674727827e9c2050c7c5b016c26&v=4" width="100px;" alt=""/><br /><sub><b>Glen Mailer</b></sub></a></td>
+  <td align="center"><a href="https://github.com/ian-howell?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/10422579?u=ff9c375b5ee2c41b4bdd20b1e32a6fc40bd6ad0f&v=4" width="100px;" alt=""/><br /><sub><b>Ian Howell</b></sub></a></td>
+  <td align="center"><a href="twitter.com/hugelgupf?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/1994130?u=049cf9d9efdeb5bf54c93ed7ee70bf5a64b437d7&v=4" width="100px;" alt=""/><br /><sub><b>Chris K</b></sub></a></td>
+  <td align="center"><a href="https://tomarrell.com?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/7939459?u=330de5d206f2ff0fc34cde7d718e055971c3d8d0&v=4" width="100px;" alt=""/><br /><sub><b>Tom Arrell</b></sub></a></td>
+  <td align="center"><a href="https://github.com/neha-viswanathan?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/12013126?u=ac3c8aae637d4575d6b54907fbcbdaaa70ee418d&v=4" width="100px;" alt=""/><br /><sub><b>Neha Viswanathan</b></sub></a></td>
+  <td align="center"><a href="https://media.giphy.com/media/XxWjoyOLi4mkM/giphy.gif?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/24299864?u=2ff91f3ab37067826ed6986ff11fdaabc7a79b1f&v=4" width="100px;" alt=""/><br /><sub><b>Marko</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="http://cflewis.com?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/43708?u=20ffa568c463916d20483acee34b09dd26581dec&v=4" width="100px;" alt=""/><br /><sub><b>Chris Lewis</b></sub></a></td>
+  <td align="center"><a href="http://derekperkins.com?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/3588778?v=4" width="100px;" alt=""/><br /><sub><b>Derek Perkins</b></sub></a></td>
+  <td align="center"><a href="https://github.com/gleichda?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/15176026?u=7555939416df1132efc87906be73f15846557db3&v=4" width="100px;" alt=""/><br /><sub><b>David Gleich</b></sub></a></td>
+  <td align="center"><a href="https://pararang.github.io/?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/8720184?v=4" width="100px;" alt=""/><br /><sub><b>Muhammad Ikhsan</b></sub></a></td>
+  <td align="center"><a href="https://www.linkedin.com/in/titusjaka/?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/5277948?u=784515fda5ba2358fdc0b67ab9f654a70d4a426b&v=4" width="100px;" alt=""/><br /><sub><b>Denis Titusov</b></sub></a></td>
+  <td align="center"><a href="https://github.com/vterdunov?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/13706147?v=4" width="100px;" alt=""/><br /><sub><b>Terdunov Vyacheslav</b></sub></a></td>
+  <td align="center"><a href="https://github.com/sean-?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/349516?v=4" width="100px;" alt=""/><br /><sub><b>Sean Chittenden</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="http://teawater.github.io/?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/432382?u=9514a61d4673645c588601398737d29e68ae2372&v=4" width="100px;" alt=""/><br /><sub><b>Hui Zhu</b></sub></a></td>
+  <td align="center"><a href="https://github.com/Harsimran1?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/8309130?u=827935180bf29dbed77f16f0fd4783fae3a7e5e0&v=4" width="100px;" alt=""/><br /><sub><b>@Harsimran1</b></sub></a></td>
+  <td align="center"><a href="https://rinsuki.net/?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/6533808?u=325d7d5a86a50917290fddbe8d6204e712d632aa&v=4" width="100px;" alt=""/><br /><sub><b>rinsuki</b></sub></a></td>
+  <td align="center"><a href="https://nvartolomei.com?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/543193?u=972ac6bbb1e48aa474e8677fd3b9368fe61e4872&v=4" width="100px;" alt=""/><br /><sub><b>@nvartolomei</b></sub></a></td>
+  <td align="center"><a href="https://getcloudnative.io?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/873565?u=abceeaf3aaa299e89ad07ee33ebc9e17c0f3258d&v=4" width="100px;" alt=""/><br /><sub><b>Martin Etmajer</b></sub></a></td>
+  <td align="center"><a href="https://github.com/techknowlogick?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/164197?v=4" width="100px;" alt=""/><br /><sub><b>@techknowlogick</b></sub></a></td>
+  <td align="center"><a href="https://github.com/fisherxu?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/28776356?u=16bb46f48840d43aaa8bf3692de51c26309ab27e&v=4" width="100px;" alt=""/><br /><sub><b>Fisher Xu</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://github.com/matthewpoer?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/727257?u=5efb699d02d7e627bbbdccafa804066b177e170b&v=4" width="100px;" alt=""/><br /><sub><b>Matthew Poer</b></sub></a></td>
+  <td align="center"><a href="codyleyhan.com?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/11651981?u=ee4ee8f95ae169207fb701e059f076ecadc51055&v=4" width="100px;" alt=""/><br /><sub><b>Cody Ley-Han</b></sub></a></td>
+  <td align="center"><a href="https://marctuduri.com?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/280193?u=985ca62d9dae51f3826bfee7b664bab08559b1af&v=4" width="100px;" alt=""/><br /><sub><b>Marc Tudurí</b></sub></a></td>
+  <td align="center"><a href="https://github.com/pohang?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/19980697?u=5f47fe20e767e04a2a0a3ce9423151172616bffc&v=4" width="100px;" alt=""/><br /><sub><b>Patrick Zhang</b></sub></a></td>
+  <td align="center"><a href="https://github.com/darklore?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/958690?v=4" width="100px;" alt=""/><br /><sub><b>darklore</b></sub></a></td>
+  <td align="center"><a href="https://github.com/to6ka?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/29016937?v=4" width="100px;" alt=""/><br /><sub><b>@to6ka</b></sub></a></td>
+  <td align="center"><a href="https://www.linkedin.com/in/daniel-helfand-068aaa30/?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/34258252?u=68dad1d1d85d47c4bab2de0112ab495c89b6fd49&v=4" width="100px;" alt=""/><br /><sub><b>Daniel Helfand</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://github.com/evalexpr?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/23485511?u=5c6b8d5b34333b88d58c11786812815b550aae94&v=4" width="100px;" alt=""/><br /><sub><b>Wilkins</b></sub></a></td>
+  <td align="center"><a href="https://github.com/cjkreklow?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/55775?u=8ee6cac6c286964a9c15a73e2fa48de097700d79&v=4" width="100px;" alt=""/><br /><sub><b>Collin Kreklow</b></sub></a></td>
+  <td align="center"><a href="http://ssgreg.com?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/1574981?u=a5afff1d2f056a0ac05be2f5464afa5bc6d33631&v=4" width="100px;" alt=""/><br /><sub><b>Grigory Zubankov</b></sub></a></td>
+  <td align="center"><a href="http://magnetikonline.com?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/1818757?u=27ca8c53c66113faa67f6b48aeb8841717c0ee2f&v=4" width="100px;" alt=""/><br /><sub><b>Peter Mescalchin</b></sub></a></td>
+  <td align="center"><a href="http://marcin.owsiany.pl/?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/489420?u=e236c95628ea05d56bdc0b3d3ae01be35f2fb1d8&v=4" width="100px;" alt=""/><br /><sub><b>Marcin Owsiany</b></sub></a></td>
+  <td align="center"><a href="https://github.com/dajohi?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/3308193?u=451dc7ae6de642e9dc40c02fcebc51c4ce4a7323&v=4" width="100px;" alt=""/><br /><sub><b>David Hill</b></sub></a></td>
+  <td align="center"><a href="http://troyronda.com?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/1906596?u=24e2ee3a45173da6e512fedcd05fdfc24716e65e&v=4" width="100px;" alt=""/><br /><sub><b>Troy Ronda</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://linkedin.com/in/osamingo?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/1390409?u=e86592e414db66d6ac047a242e294bca95b4ea56&v=4" width="100px;" alt=""/><br /><sub><b>Osamu TONOMORI</b></sub></a></td>
+  <td align="center"><a href="https://github.com/liubog2008?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/7920667?v=4" width="100px;" alt=""/><br /><sub><b>Bo Liu</b></sub></a></td>
+  <td align="center"><a href="https://stebalien.com?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/310393?u=4e536db31b16cbf68588f80c363d2cf6ef6c7b9f&v=4" width="100px;" alt=""/><br /><sub><b>Steven Allen</b></sub></a></td>
+  <td align="center"><a href="https://github.com/arnottcr?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/2526260?u=507397c1f883caedf479b9a647f9ba540d7ba32e&v=4" width="100px;" alt=""/><br /><sub><b>Colin Arnott</b></sub></a></td>
+  <td align="center"><a href="https://medium.com/@levyeran?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/584783?u=9322cfd38132692cf00ca00abd56ec7be6ebe1a7&v=4" width="100px;" alt=""/><br /><sub><b>Eran Levy</b></sub></a></td>
+  <td align="center"><a href="engineeringideas.substack.com?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/609240?v=4" width="100px;" alt=""/><br /><sub><b>Roman Leventov</b></sub></a></td>
+  <td align="center"><a href="https://github.com/mmatur?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/1776972?u=fe2b7a5a4ab893f90667b8204803c4724d0cb7d7&v=4" width="100px;" alt=""/><br /><sub><b>Michael</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://kulikov.im?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/888650?u=e42fab110432eeb3d28a81b6bde4fd8d63066220&v=4" width="100px;" alt=""/><br /><sub><b>Evgeniy Kulikov</b></sub></a></td>
+  <td align="center"><a href="http://cns.me?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/715120?v=4" width="100px;" alt=""/><br /><sub><b>Chris Nesbitt-Smith</b></sub></a></td>
+  <td align="center"><a href="https://es.linkedin.com/in/danicaba?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/15898942?u=ef836b375a210ca5e5a9c3485a9d6b5a94f9532d&v=4" width="100px;" alt=""/><br /><sub><b>Daniel Caballero</b></sub></a></td>
+  <td align="center"><a href="https://github.com/CarltonHenderson?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/22032748?u=04ffcb0d59948341a48c07a74fc158e44114c5dd&v=4" width="100px;" alt=""/><br /><sub><b>Carlton Henderson</b></sub></a></td>
+  <td align="center"><a href="https://momotaro98.github.io/?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/9294726?u=dcb56ab26f41ca32b38843532ab7f9553bed0cf8&v=4" width="100px;" alt=""/><br /><sub><b>Shintaro Ikeda</b></sub></a></td>
+  <td align="center"><a href="xuri.me?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/2809468?u=c4de44a07b66fef3ba808b1becd4d3c2ed93e9c9&v=4" width="100px;" alt=""/><br /><sub><b>@xuri</b></sub></a></td>
+  <td align="center"><a href="http://blog.ntrippy.net?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/36466?v=4" width="100px;" alt=""/><br /><sub><b>Charl Matthee</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="srizzling.github.io?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/2313668?u=30e4daec389bc14e50ae088a63b37b02ef81c0d9&v=4" width="100px;" alt=""/><br /><sub><b>Sriram Venkatesh</b></sub></a></td>
+  <td align="center"><a href="http://www.scode.org/?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/59476?u=35fe85f5175bacc5521c195def108a5680976d6d&v=4" width="100px;" alt=""/><br /><sub><b>Peter Schuller</b></sub></a></td>
+  <td align="center"><a href="https://github.com/dgolub?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/5299?v=4" width="100px;" alt=""/><br /><sub><b>David Golub</b></sub></a></td>
+  <td align="center"><a href="http://lk4d4.darth.io?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/101445?u=8d86da37cd14c1d871da0fb1977521da14ae7285&v=4" width="100px;" alt=""/><br /><sub><b>Alexander Morozov</b></sub></a></td>
+  <td align="center"><a href="https://github.com/hbandura?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/731692?v=4" width="100px;" alt=""/><br /><sub><b>Hernan Bandura</b></sub></a></td>
+  <td align="center"><a href="www.linkedin.com/in/liam-white?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/14291598?u=669c70086377c0de758436d5ab1fca81f48690dc&v=4" width="100px;" alt=""/><br /><sub><b>Liam White</b></sub></a></td>
+  <td align="center"><a href="https://github.com/alexdupre?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/3694371?u=aa651af67b8de48a503cf82f5f7ef9d2a646af91&v=4" width="100px;" alt=""/><br /><sub><b>Alex Dupre</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://commure.com?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/10868426?u=6b2fef3f6a04b90cbabace8aae97e2a9837e6c1b&v=4" width="100px;" alt=""/><br /><sub><b>Juanito</b></sub></a></td>
+  <td align="center"><a href="http://supereagle.github.io/?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/3390333?u=c2f3e02916de40814c175560bcd831181f1e7117&v=4" width="100px;" alt=""/><br /><sub><b>Jinming Yue</b></sub></a></td>
+  <td align="center"><a href="https://github.com/hypnoglow?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/4853075?u=46a46b12713a37327db040e701fdf974032e4f28&v=4" width="100px;" alt=""/><br /><sub><b>Igor Zibarev</b></sub></a></td>
+  <td align="center"><a href="https://github.com/wxdao?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/1405249?u=5bf158903e33f6d6721b4b6989ced381b1c94eb9&v=4" width="100px;" alt=""/><br /><sub><b>@wxdao</b></sub></a></td>
+  <td align="center"><a href="https://dunglas.fr?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/57224?u=a7ed2cf3f0ae84c9e06925b94091b85a7d6324b0&v=4" width="100px;" alt=""/><br /><sub><b>Kévin Dunglas</b></sub></a></td>
+  <td align="center"><a href="https://github.com/iyangsj?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/780807?v=4" width="100px;" alt=""/><br /><sub><b>Sijie Yang</b></sub></a></td>
+  <td align="center"><a href="http://www.stephengroat.com?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/1159138?u=5dfa8464ae8884695e3214800085ac02a5da9283&v=4" width="100px;" alt=""/><br /><sub><b>Stephen</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://me.coddeine.com/?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/5120965?u=9834ae2b7d0dfeb32e050d06d6f4dd979404daf7&v=4" width="100px;" alt=""/><br /><sub><b>Thang Minh Vu</b></sub></a></td>
+  <td align="center"><a href="https://github.com/juliaogris?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/1596871?u=f911daad0502d9b840608caf8cb91d8fe600db13&v=4" width="100px;" alt=""/><br /><sub><b>Julia Ogris</b></sub></a></td>
+  <td align="center"><a href="gregcurt.is?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/230338?v=4" width="100px;" alt=""/><br /><sub><b>Greg Curtis</b></sub></a></td>
+  <td align="center"><a href="https://github.com/ac-rappi?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/54147417?v=4" width="100px;" alt=""/><br /><sub><b>@ac-rappi</b></sub></a></td>
+  <td align="center"><a href="siliconbrain.github.io?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/402845?v=4" width="100px;" alt=""/><br /><sub><b>Dudás Ádám</b></sub></a></td>
+  <td align="center"><a href="https://github.com/irinazheltisheva?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/70594426?u=176984a0e30e43d3f135d0052f0b21c579d24d5f&v=4" width="100px;" alt=""/><br /><sub><b>Irina</b></sub></a></td>
+  <td align="center"><a href="https://github.com/hummerd?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/1921665?u=fc42a642da357e81fb41987d69aa2efaa85e81c3&v=4" width="100px;" alt=""/><br /><sub><b>Dima</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="http://www.alessiotreglia.com?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/229356?u=6d13b85248957859a4887e3fed4ee54279198f1d&v=4" width="100px;" alt=""/><br /><sub><b>Alessio Treglia</b></sub></a></td>
+  <td align="center"><a href="https://github.com/alaypatel07?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/8192650?u=e51ba577c0ef201daa2846c33e885d98475ac37e&v=4" width="100px;" alt=""/><br /><sub><b>Alay Patel</b></sub></a></td>
+  <td align="center"><a href="https://github.com/mhutchinson?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/1355668?u=8b132f310be9c4f2e877ba220b300fda1b09ae33&v=4" width="100px;" alt=""/><br /><sub><b>Martin Hutchinson</b></sub></a></td>
+  <td align="center"><a href="https://github.com/l0nax?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/29659953?u=01b40c160e224232fe42bf4c4c3c2051bfd2b82c&v=4" width="100px;" alt=""/><br /><sub><b>Emanuel Bennici</b></sub></a></td>
+  <td align="center"><a href="https://www.patreon.com/cclauss?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/3709715?u=0745d1d2473894c33f3b35f0b965d71cc9aec553&v=4" width="100px;" alt=""/><br /><sub><b>Christian Clauss</b></sub></a></td>
+  <td align="center"><a href="ru.gravatar.com/korjavin?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/148765?v=4" width="100px;" alt=""/><br /><sub><b>Korjavin Ivan</b></sub></a></td>
+  <td align="center"><a href="francois.parquet.cc?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/24575934?u=afb7942a02e997bd463a3b99ca9b309b54e0f249&v=4" width="100px;" alt=""/><br /><sub><b>Francois Parquet</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="http://23doors.com?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/1051101?u=92cef9a943a64f6ec3d0c6b08e1f3de4b41b5d7c&v=4" width="100px;" alt=""/><br /><sub><b>Robert Kopaczewski</b></sub></a></td>
+  <td align="center"><a href="https://gitlab.com/opennota?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/5520115?u=78b6cb0cbe25dd4d6a8ca73d042e374859d92b26&v=4" width="100px;" alt=""/><br /><sub><b>@opennota</b></sub></a></td>
+  <td align="center"><a href="https://sea-race.fr?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/3671279?u=bdf269f1656ffe128c482e286db345f772ee2833&v=4" width="100px;" alt=""/><br /><sub><b>Cyrille Meichel</b></sub></a></td>
+  <td align="center"><a href="https://twitter.com/neglect_yp?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/20413543?v=4" width="100px;" alt=""/><br /><sub><b>neglect-yp</b></sub></a></td>
+  <td align="center"><a href="https://github.com/jumpeiMano?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/6240874?u=779a2ed4b4ddd4117bac58c315013f6b7df7f50a&v=4" width="100px;" alt=""/><br /><sub><b>@jumpeiMano</b></sub></a></td>
+  <td align="center"><a href="https://github.com/esimonov?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/25531859?u=374b2f19abd0d62494bd458bc3a9c11921bd99c2&v=4" width="100px;" alt=""/><br /><sub><b>Eugene Simonov</b></sub></a></td>
+  <td align="center"><a href="https://github.com/weijiangan?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/6372144?u=6a8a13854375e531dca35bfbd67d37aeabb3a43a&v=4" width="100px;" alt=""/><br /><sub><b>Wei Jian Gan</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://github.com/tgulacsi?utm_source=golangci-lint-contributors"><img src="https://avatars2.githubusercontent.com/u/256074?v=4" width="100px;" alt=""/><br /><sub><b>Tamás Gulácsi</b></sub></a></td>
+  <td align="center"><a href="jackwilsdon.me?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/1843197?u=0e5b9858f4ded98ffe7dfbbe9f5e4315cd597cd8&v=4" width="100px;" alt=""/><br /><sub><b>Jack Wilsdon</b></sub></a></td>
+  <td align="center"><a href="https://github.com/Gobonoid?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/15029578?u=7fed21f2429bdca932dd55a69c8ec0ee36e772a2&v=4" width="100px;" alt=""/><br /><sub><b>Michał Suchwałko</b></sub></a></td>
+  <td align="center"><a href="https://github.com/aLekSer?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/5626814?u=f23f71d0b298f243de664879d949af6b808b1017&v=4" width="100px;" alt=""/><br /><sub><b>Alexander Apalikov</b></sub></a></td>
+  <td align="center"><a href="https://git.sr.ht/~domust?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/54954739?v=4" width="100px;" alt=""/><br /><sub><b>Domas Tamašauskas</b></sub></a></td>
+  <td align="center"><a href="iomelette.fr?utm_source=golangci-lint-contributors"><img src="https://avatars0.githubusercontent.com/u/7288655?u=c340284bba9db0444293d7f48e7f8ce2f33db653&v=4" width="100px;" alt=""/><br /><sub><b>Stéphane Chausson</b></sub></a></td>
+  <td align="center"><a href="https://plus.google.com/u/0/104675305010518579165?utm_source=golangci-lint-contributors"><img src="https://avatars1.githubusercontent.com/u/1690210?u=152b7c1086a84a7e756d35c3c71767ed676ed4f8&v=4" width="100px;" alt=""/><br /><sub><b>neo_sli</b></sub></a></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://yeya24.github.io/?utm_source=golangci-lint-contributors"><img src="https://avatars3.githubusercontent.com/u/25150124?u=ab29fc5924354378ccdafd8d6e19cb4eb3d3ad5b&v=4" width="100px;" alt=""/><br /><sub><b>Ben Ye</b></sub></a></td>
+</tr>
+</table>
+
+</details>
+
+<!-- markdownlint-enable -->
+<!-- prettier-ignore-end -->
+<!-- END AUTOGENERATED CONTRIBUTORS -->
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/golangci/golangci-lint.svg)](https://starchart.cc/golangci/golangci-lint)

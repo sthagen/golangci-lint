@@ -170,18 +170,20 @@ func TestEnabledLinters(t *testing.T) {
 		},
 	}
 
+	runner := testshared.NewLintRunner(t)
 	for _, c := range cases {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
-			runArgs := []string{"-v"}
+			t.Parallel()
+
+			runArgs := []string{"--verbose"}
 			if !c.noImplicitFast {
 				runArgs = append(runArgs, "--fast")
 			}
 			if c.args != "" {
 				runArgs = append(runArgs, strings.Split(c.args, " ")...)
 			}
-			runArgs = append(runArgs, minimalPkg)
-			r := testshared.NewLintRunner(t).RunWithYamlConfig(c.cfg, runArgs...)
+			r := runner.RunCommandWithYamlConfig(c.cfg, "linters", runArgs...)
 			sort.StringSlice(c.el).Sort()
 
 			expectedLine := fmt.Sprintf("Active %d linters: [%s]", len(c.el), strings.Join(c.el, " "))

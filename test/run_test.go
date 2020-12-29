@@ -99,9 +99,10 @@ func TestCgoOk(t *testing.T) {
 }
 
 func TestCgoWithIssues(t *testing.T) {
-	testshared.NewLintRunner(t).Run("--no-config", "--disable-all", "-Egovet", getTestDataDir("cgo_with_issues")).
+	r := testshared.NewLintRunner(t)
+	r.Run("--no-config", "--disable-all", "-Egovet", getTestDataDir("cgo_with_issues")).
 		ExpectHasIssue("Printf format %t has arg cs of wrong type")
-	testshared.NewLintRunner(t).Run("--no-config", "--disable-all", "-Estaticcheck", getTestDataDir("cgo_with_issues")).
+	r.Run("--no-config", "--disable-all", "-Estaticcheck", getTestDataDir("cgo_with_issues")).
 		ExpectHasIssue("SA5009: Printf format %t has arg #1 of wrong type")
 }
 
@@ -125,6 +126,41 @@ func TestLineDirectiveProcessedFilesLiteLoading(t *testing.T) {
 	r.ExpectExitCode(exitcodes.IssuesFound).ExpectOutputEq(output + "\n")
 }
 
+func TestSortedResults(t *testing.T) {
+	var testCases = []struct {
+		opt  string
+		want string
+	}{
+		{
+			"--sort-results=false",
+			strings.Join([]string{
+				"testdata/sort_results/main.go:12:5: `db` is unused (deadcode)",
+				"testdata/sort_results/main.go:15:13: Error return value of `returnError` is not checked (errcheck)",
+				"testdata/sort_results/main.go:8:6: func `returnError` is unused (unused)",
+			}, "\n"),
+		},
+		{
+			"--sort-results=true",
+			strings.Join([]string{
+				"testdata/sort_results/main.go:8:6: func `returnError` is unused (unused)",
+				"testdata/sort_results/main.go:12:5: `db` is unused (deadcode)",
+				"testdata/sort_results/main.go:15:13: Error return value of `returnError` is not checked (errcheck)",
+			}, "\n"),
+		},
+	}
+
+	dir := getTestDataDir("sort_results")
+
+	t.Parallel()
+	for i := range testCases {
+		test := testCases[i]
+		t.Run(test.opt, func(t *testing.T) {
+			r := testshared.NewLintRunner(t).Run("--print-issued-lines=false", test.opt, dir)
+			r.ExpectExitCode(exitcodes.IssuesFound).ExpectOutputEq(test.want + "\n")
+		})
+	}
+}
+
 func TestLineDirectiveProcessedFilesFullLoading(t *testing.T) {
 	r := testshared.NewLintRunner(t).Run("--print-issued-lines=false", "--no-config",
 		"--exclude-use-default=false", "-Egolint,govet", getTestDataDir("quicktemplate"))
@@ -137,11 +173,33 @@ func TestLineDirectiveProcessedFilesFullLoading(t *testing.T) {
 	r.ExpectExitCode(exitcodes.IssuesFound).ExpectOutputEq(output + "\n")
 }
 
+func TestLintFilesWithLineDirective(t *testing.T) {
+	r := testshared.NewLintRunner(t)
+	r.Run("-Edupl", "--disable-all", "--config=testdata/linedirective/dupl.yml", getTestDataDir("linedirective")).
+		ExpectHasIssue("21-23 lines are duplicate of `testdata/linedirective/hello.go:25-27` (dupl)")
+	r.Run("-Egofmt", "--disable-all", "--no-config", getTestDataDir("linedirective")).
+		ExpectHasIssue("File is not `gofmt`-ed with `-s` (gofmt)")
+	r.Run("-Egoimports", "--disable-all", "--no-config", getTestDataDir("linedirective")).
+		ExpectHasIssue("File is not `goimports`-ed (goimports)")
+	r.
+		Run("-Egomodguard", "--disable-all", "--config=testdata/linedirective/gomodguard.yml", getTestDataDir("linedirective")).
+		ExpectHasIssue("import of package `github.com/ryancurrah/gomodguard` is blocked because the module is not " +
+			"in the allowed modules list. (gomodguard)")
+	r.Run("-Eineffassign", "--disable-all", "--no-config", getTestDataDir("linedirective")).
+		ExpectHasIssue("ineffectual assignment to `x` (ineffassign)")
+	r.Run("-Elll", "--disable-all", "--config=testdata/linedirective/lll.yml", getTestDataDir("linedirective")).
+		ExpectHasIssue("line is 57 characters (lll)")
+	r.Run("-Emisspell", "--disable-all", "--no-config", getTestDataDir("linedirective")).
+		ExpectHasIssue("is a misspelling of `language` (misspell)")
+	r.Run("-Ewsl", "--disable-all", "--no-config", getTestDataDir("linedirective")).
+		ExpectHasIssue("block should not start with a whitespace (wsl)")
+}
+
 func TestSkippedDirsNoMatchArg(t *testing.T) {
 	dir := getTestDataDir("skipdirs", "skip_me", "nested")
-	r := testshared.NewLintRunner(t).Run("--print-issued-lines=false", "--no-config", "--skip-dirs", dir, "-Egolint", dir)
+	res := testshared.NewLintRunner(t).Run("--print-issued-lines=false", "--no-config", "--skip-dirs", dir, "-Egolint", dir)
 
-	r.ExpectExitCode(exitcodes.IssuesFound).
+	res.ExpectExitCode(exitcodes.IssuesFound).
 		ExpectOutputEq("testdata/skipdirs/skip_me/nested/with_issue.go:8:9: `if` block ends with " +
 			"a `return` statement, so drop this `else` and outdent its block (golint)\n")
 }
@@ -161,6 +219,7 @@ func TestIdentifierUsedOnlyInTests(t *testing.T) {
 }
 
 func TestUnusedCheckExported(t *testing.T) {
+	t.Skip("Issue955")
 	testshared.NewLintRunner(t).Run("-c", "testdata_etc/unused_exported/golangci.yml", "testdata_etc/unused_exported/...").ExpectNoIssues()
 }
 
@@ -266,5 +325,24 @@ func TestDisallowedOptionsInConfig(t *testing.T) {
 
 		// Run with disallowed option set both in command-line and in config
 		r.RunWithYamlConfig(c.cfg, withCommonRunArgs(args...)...).ExpectExitCode(exitcodes.Failure)
+	}
+}
+
+func TestPathPrefix(t *testing.T) {
+	for _, tt := range []struct {
+		Name    string
+		Args    []string
+		Pattern string
+	}{
+		{"empty", nil, "^testdata/withtests/"},
+		{"prefixed", []string{"--path-prefix=cool"}, "^cool/testdata/withtests"},
+	} {
+		t.Run(tt.Name, func(t *testing.T) {
+			testshared.NewLintRunner(t).Run(
+				append(tt.Args, getTestDataDir("withtests"))..., //nolint:scopelint
+			).ExpectOutputRegexp(
+				tt.Pattern, //nolint:scopelint
+			)
+		})
 	}
 }
