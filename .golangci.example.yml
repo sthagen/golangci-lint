@@ -193,6 +193,10 @@ linters-settings:
   godot:
     # comments to be checked: `declarations`, `toplevel`, or `all`
     scope: declarations
+    # list of regexps for excluding particular comment lines from check
+    exclude:
+      # example: exclude comments which contain numbers
+      # - '[0-9]+'
     # check that each sentence starts with a capital letter
     capital: false
   godox:
@@ -293,6 +297,12 @@ linters-settings:
     packages-with-error-message:
       # specify an error message to output when a blacklisted package is used
       - github.com/sirupsen/logrus: "logging is allowed only by logutils.Log"
+  ifshort:
+    # Maximum length of variable declaration measured in number of lines, after which linter won't suggest using short syntax. 
+    # Has higher priority than max-decl-chars.
+    max-decl-lines: 1
+    # Maximum length of variable declaration measured in number of characters, after which linter won't suggest using short syntax.
+    max-decl-chars: 30
   lll:
     # max line length, lines longer will be reported. Default is 120.
     # '\t' is counted as 1 character by default, and can be changed with the tab-width option
@@ -404,6 +414,8 @@ linters-settings:
       - fmt.Errorf # consider errors.Errorf in github.com/pkg/errors
       - fmt.Print.* # too much log noise
       - ginkgo\\.F.* # these are used just for local development
+    # Exclude godoc examples from forbidigo checks.  Default is true.
+    exclude_godoc_examples: false
 
   # The custom section can be used to define linter plugins to be loaded at runtime. See README doc
   #  for more info.

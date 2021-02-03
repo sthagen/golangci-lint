@@ -270,6 +270,7 @@ type LintersSettings struct {
 	Makezero    MakezeroSettings
 	Thelper     ThelperSettings
 	Forbidigo   ForbidigoSettings
+	Ifshort     IfshortSettings
 	Predeclared PredeclaredSettings
 
 	Custom map[string]CustomLinterSettings
@@ -355,8 +356,9 @@ type WSLSettings struct {
 }
 
 type GodotSettings struct {
-	Scope   string `mapstructure:"scope"`
-	Capital bool   `mapstructure:"capital"`
+	Scope   string   `mapstructure:"scope"`
+	Exclude []string `mapstructure:"exclude"`
+	Capital bool     `mapstructure:"capital"`
 
 	// Deprecated: use `Scope` instead
 	CheckAll bool `mapstructure:"check-all"`
@@ -408,8 +410,14 @@ type ThelperSettings struct {
 	} `mapstructure:"benchmark"`
 }
 
+type IfshortSettings struct {
+	MaxDeclLines int `mapstructure:"max-decl-lines"`
+	MaxDeclChars int `mapstructure:"max-decl-chars"`
+}
+
 type ForbidigoSettings struct {
-	Forbid []string `mapstructure:"forbid"`
+	Forbid               []string `mapstructure:"forbid"`
+	ExcludeGodocExamples bool     `mapstructure:"exclude-godoc-examples"`
 }
 
 type PredeclaredSettings struct {
@@ -477,9 +485,16 @@ var defaultLintersSettings = LintersSettings{
 	ErrorLint: ErrorLintSettings{
 		Errorf: true,
 	},
+	Ifshort: IfshortSettings{
+		MaxDeclLines: 1,
+		MaxDeclChars: 30,
+	},
 	Predeclared: PredeclaredSettings{
 		Ignore:    "",
 		Qualified: false,
+	},
+	Forbidigo: ForbidigoSettings{
+		ExcludeGodocExamples: true,
 	},
 }
 
