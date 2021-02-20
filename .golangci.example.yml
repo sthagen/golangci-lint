@@ -111,6 +111,12 @@ linters-settings:
     # 'default' case is present, even if all enum members aren't listed in the
     # switch
     default-signifies-exhaustive: false
+  exhaustivestruct:
+    struct-patterns:
+      - '*.Test'
+      - '*.Test2'
+      - '*.Embedded'
+      - '*.External'
   funlen:
     lines: 60
     statements: 40
@@ -190,6 +196,14 @@ linters-settings:
   gocyclo:
     # minimal code complexity to report, 30 by default (but we recommend 10-20)
     min-complexity: 10
+
+  cyclop:
+    # the maximal code complexity to report
+    max-complexity: 10
+    # the maximal average package complexity. If it's higher than 0.0 (float) the check is enabled (default 0.0)
+    package-average: 0.0
+    # should ignore tests (default false)
+    skip-tests: false
   godot:
     # comments to be checked: `declarations`, `toplevel`, or `all`
     scope: declarations
@@ -298,7 +312,7 @@ linters-settings:
       # specify an error message to output when a blacklisted package is used
       - github.com/sirupsen/logrus: "logging is allowed only by logutils.Log"
   ifshort:
-    # Maximum length of variable declaration measured in number of lines, after which linter won't suggest using short syntax. 
+    # Maximum length of variable declaration measured in number of lines, after which linter won't suggest using short syntax.
     # Has higher priority than max-decl-chars.
     max-decl-lines: 1
     # Maximum length of variable declaration measured in number of characters, after which linter won't suggest using short syntax.
@@ -350,6 +364,13 @@ linters-settings:
   rowserrcheck:
     packages:
       - github.com/jmoiron/sqlx
+  revive:
+    # see https://github.com/mgechev/revive#available-rules for details.
+    ignore-generated-header: true
+    severity: warning
+    rules:
+      - name: indent-error-flow
+        severity: warning
   testpackage:
     # regexp pattern to skip files
     skip-regexp: (export|internal)_test\.go
@@ -361,6 +382,10 @@ linters-settings:
       name: true
       begin: true
     benchmark:
+      first: true
+      name: true
+      begin: true
+    tb:
       first: true
       name: true
       begin: true

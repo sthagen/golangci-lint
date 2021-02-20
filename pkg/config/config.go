@@ -249,29 +249,32 @@ type LintersSettings struct {
 		} `mapstructure:"blocked"`
 	}
 
-	WSL         WSLSettings
-	Lll         LllSettings
-	Unparam     UnparamSettings
-	Nakedret    NakedretSettings
-	Prealloc    PreallocSettings
-	Errcheck    ErrcheckSettings
-	Gocritic    GocriticSettings
-	Godox       GodoxSettings
-	Dogsled     DogsledSettings
-	Gocognit    GocognitSettings
-	Godot       GodotSettings
-	Goheader    GoHeaderSettings
-	Testpackage TestpackageSettings
-	Nestif      NestifSettings
-	NoLintLint  NoLintLintSettings
-	Exhaustive  ExhaustiveSettings
-	Gofumpt     GofumptSettings
-	ErrorLint   ErrorLintSettings
-	Makezero    MakezeroSettings
-	Thelper     ThelperSettings
-	Forbidigo   ForbidigoSettings
-	Ifshort     IfshortSettings
-	Predeclared PredeclaredSettings
+	WSL              WSLSettings
+	Lll              LllSettings
+	Unparam          UnparamSettings
+	Nakedret         NakedretSettings
+	Prealloc         PreallocSettings
+	Errcheck         ErrcheckSettings
+	Gocritic         GocriticSettings
+	Godox            GodoxSettings
+	Dogsled          DogsledSettings
+	Gocognit         GocognitSettings
+	Godot            GodotSettings
+	Goheader         GoHeaderSettings
+	Testpackage      TestpackageSettings
+	Nestif           NestifSettings
+	NoLintLint       NoLintLintSettings
+	Exhaustive       ExhaustiveSettings
+	ExhaustiveStruct ExhaustiveStructSettings
+	Gofumpt          GofumptSettings
+	ErrorLint        ErrorLintSettings
+	Makezero         MakezeroSettings
+	Revive           ReviveSettings
+	Thelper          ThelperSettings
+	Forbidigo        ForbidigoSettings
+	Ifshort          IfshortSettings
+	Predeclared      PredeclaredSettings
+	Cyclop           Cyclop
 
 	Custom map[string]CustomLinterSettings
 }
@@ -385,6 +388,10 @@ type ExhaustiveSettings struct {
 	DefaultSignifiesExhaustive bool `mapstructure:"default-signifies-exhaustive"`
 }
 
+type ExhaustiveStructSettings struct {
+	StructPatterns []string `mapstructure:"struct-patterns"`
+}
+
 type GofumptSettings struct {
 	ExtraRules bool `mapstructure:"extra-rules"`
 }
@@ -395,6 +402,23 @@ type ErrorLintSettings struct {
 
 type MakezeroSettings struct {
 	Always bool
+}
+
+type ReviveSettings struct {
+	IgnoreGeneratedHeader bool `mapstructure:"ignore-generated-header"`
+	Confidence            float64
+	Severity              string
+	Rules                 []struct {
+		Name      string
+		Arguments []interface{}
+		Severity  string
+	}
+	ErrorCode   int `mapstructure:"error-code"`
+	WarningCode int `mapstructure:"warning-code"`
+	Directives  []struct {
+		Name     string
+		Severity string
+	}
 }
 
 type ThelperSettings struct {
@@ -408,6 +432,11 @@ type ThelperSettings struct {
 		Name  bool `mapstructure:"name"`
 		Begin bool `mapstructure:"begin"`
 	} `mapstructure:"benchmark"`
+	TB struct {
+		First bool `mapstructure:"first"`
+		Name  bool `mapstructure:"name"`
+		Begin bool `mapstructure:"begin"`
+	} `mapstructure:"tb"`
 }
 
 type IfshortSettings struct {
@@ -423,6 +452,12 @@ type ForbidigoSettings struct {
 type PredeclaredSettings struct {
 	Ignore    string `mapstructure:"ignore"`
 	Qualified bool   `mapstructure:"q"`
+}
+
+type Cyclop struct {
+	MaxComplexity  int     `mapstructure:"max-complexity"`
+	PackageAverage float64 `mapstructure:"package-average"`
+	SkipTests      bool    `mapstructure:"skip-tests"`
 }
 
 var defaultLintersSettings = LintersSettings{
