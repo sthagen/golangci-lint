@@ -238,7 +238,8 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 		linter.NewConfig(golinters.NewMaligned()).
 			WithLoadForGoAnalysis().
 			WithPresets(linter.PresetPerformance).
-			WithURL("https://github.com/mdempsky/maligned"),
+			WithURL("https://github.com/mdempsky/maligned").
+			Deprecated("The repository of the linter has been archived by the owner. Use govet 'fieldalignment' instead."),
 		linter.NewConfig(golinters.NewDepguard()).
 			WithLoadForGoAnalysis().
 			WithPresets(linter.PresetStyle).
@@ -374,6 +375,10 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 			WithPresets(linter.PresetBugs).
 			WithLoadForGoAnalysis().
 			WithURL("https://github.com/charithe/durationcheck"),
+		linter.NewConfig(golinters.NewWastedAssign()).
+			WithPresets(linter.PresetStyle).
+			WithLoadForGoAnalysis().
+			WithURL("https://github.com/sanposhiho/wastedassign"),
 
 		// nolintlint must be last because it looks at the results of all the previous linters for unused nolint directives
 		linter.NewConfig(golinters.NewNoLintLint()).
