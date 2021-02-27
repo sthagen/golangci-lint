@@ -23,18 +23,21 @@ require (
 	github.com/gofrs/flock v0.8.0
 	github.com/golangci/check v0.0.0-20180506172741-cfe4005ccda2
 	github.com/golangci/dupl v0.0.0-20180902072040-3e9179ac440a
-	github.com/golangci/errcheck v0.0.0-20181223084120-ef45e06d44b6
 	github.com/golangci/go-misc v0.0.0-20180628070357-927a3d87b613
 	github.com/golangci/gofmt v0.0.0-20190930125516-244bba706f1a
-	github.com/golangci/ineffassign v0.0.0-20190609212857-42439a7714cc
 	github.com/golangci/lint-1 v0.0.0-20191013205115-297bf364a8e0
 	github.com/golangci/maligned v0.0.0-20180506175553-b1d89398deca
 	github.com/golangci/misspell v0.0.0-20180809174111-950f5d19e770
 	github.com/golangci/revgrep v0.0.0-20210208091834-cd28932614b5
 	github.com/golangci/unconvert v0.0.0-20180507085042-28b1c447d1f4
-	github.com/jgautheron/goconst v0.0.0-20201117150253-ccae5bf973f3
+	github.com/gordonklaus/ineffassign v0.0.0-20210225214923-2e10b2664254
+	github.com/gostaticanalysis/forcetypeassert v0.0.0-20200621232751-01d4955beaa5
+	github.com/gostaticanalysis/nilerr v0.1.1
+	github.com/jgautheron/goconst v1.4.0
 	github.com/jingyugao/rowserrcheck v0.0.0-20210130005344-c6a0c12dd98d
 	github.com/jirfag/go-printf-func-name v0.0.0-20191110105641-45db9963cdd3
+	github.com/julz/importas v0.0.0-20210226073942-60b4fa260dd0
+	github.com/kisielk/errcheck v1.6.0
 	github.com/kulti/thelper v0.4.0
 	github.com/kunwardeep/paralleltest v1.0.2
 	github.com/kyoh86/exportloopref v0.1.8
