@@ -3,7 +3,6 @@ package lint
 import (
 	"context"
 	"fmt"
-	"os"
 	"runtime/debug"
 	"strings"
 
@@ -52,9 +51,16 @@ func NewRunner(cfg *config.Config, log logutils.Log, goenv *goutil.Env, es *lint
 	// print deprecated messages
 	if !cfg.InternalCmdTest {
 		for name, lc := range enabledLinters {
-			if lc.IsDeprecated() {
-				log.Warnf("The linter '%s' is deprecated due to: %s", name, lc.DeprecatedMessage)
+			if !lc.IsDeprecated() {
+				continue
 			}
+
+			var extra string
+			if lc.Deprecation.Replacement != "" {
+				extra = fmt.Sprintf(" Replaced by %s.", lc.Deprecation.Replacement)
+			}
+
+			log.Warnf("The linter '%s' is deprecated (since %s) due to: %s %s", name, lc.Deprecation.Since, lc.Deprecation.Message, extra)
 		}
 	}
 
@@ -102,10 +108,10 @@ func (r *Runner) runLinterSafe(ctx context.Context, lintCtx *linter.Context,
 				err = fmt.Errorf("%s: %w", lc.Name(), pe)
 
 				// Don't print stacktrace from goroutines twice
-				lintCtx.Log.Warnf("Panic: %s: %s", pe, pe.Stack())
+				r.Log.Errorf("Panic: %s: %s", pe, pe.Stack())
 			} else {
 				err = fmt.Errorf("panic occurred: %s", panicData)
-				r.Log.Warnf("Panic stack trace: %s", debug.Stack())
+				r.Log.Errorf("Panic stack trace: %s", debug.Stack())
 			}
 		}
 	}()
@@ -187,24 +193,19 @@ func (r Runner) Run(ctx context.Context, linters []*linter.Config, lintCtx *lint
 	defer sw.Print()
 
 	var issues []result.Issue
-	var runErr error
 	for _, lc := range linters {
 		lc := lc
 		sw.TrackStage(lc.Name(), func() {
 			linterIssues, err := r.runLinterSafe(ctx, lintCtx, lc)
 			if err != nil {
-				r.Log.Warnf("Can't run linter %s: %s", lc.Linter.Name(), err)
-				if os.Getenv("GOLANGCI_COM_RUN") == "" {
-					// Don't stop all linters on one linter failure for golangci.com.
-					runErr = err
-				}
+				r.Log.Warnf("Can't run linter %s: %v", lc.Linter.Name(), err)
 				return
 			}
 			issues = append(issues, linterIssues...)
 		})
 	}
 
-	return r.processLintResults(issues), runErr
+	return r.processLintResults(issues), nil
 }
 
 func (r *Runner) processIssues(issues []result.Issue, sw *timeutils.Stopwatch, statPerProcessor map[string]processorStat) []result.Issue {
@@ -236,9 +237,9 @@ func (r *Runner) processIssues(issues []result.Issue, sw *timeutils.Stopwatch, s
 
 func getExcludeProcessor(cfg *config.Issues) processors.Processor {
 	var excludeTotalPattern string
-	excludeGlobalPatterns := cfg.ExcludePatterns
-	if len(excludeGlobalPatterns) != 0 {
-		excludeTotalPattern = fmt.Sprintf("(%s)", strings.Join(excludeGlobalPatterns, "|"))
+
+	if len(cfg.ExcludePatterns) != 0 {
+		excludeTotalPattern = fmt.Sprintf("(%s)", strings.Join(cfg.ExcludePatterns, "|"))
 	}
 
 	var excludeProcessor processors.Processor

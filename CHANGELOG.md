@@ -1,29 +1,163 @@
 Follow the news and releases on our [twitter](https://twitter.com/golangci) and our [blog](https://medium.com/golangci).
 There is the most valuable changes log:
 
-## February 2021
+### June 2021
+
+1. update linters:
+   * `durationcheck`: from 0.0.7 to 0.0.8
+   * `goconst`: from 0.5.6 to 0.5.7
+   * `gomodguard`: from 1.2.1 to 1.2.2
+   * `revive`: allow to disable rule
+   * `revive`: fix exclude comment rule for const block
+2. documentation:
+   * add all integrations to docs introduction page
+3. Misc:
+   * 🎉 Un-deprecate enable-all option
+   * output: generate HTML report
+
+### May 2021
+
+1. new linters:
+   * `tagliatelle`: https://github.com/ldez/tagliatelle
+   * `promlinter`: https://github.com/yeya24/promlinter
+2. update linters:
+   * `durationcheck`: from 0.0.6 to 0.0.7
+   * `errorlint`: bump to HEAD
+   * `forbidigo`: from 1.1.0 to 1.2.0
+   * `go-critic`: from 0.5.5 to 0.5.6
+   * `godot`: from 1.4.6 to 1.4.7
+   * ⚠ `golint`: deprecated
+   * `gomnd`: from 2.3.2 to 2.4.0
+   * `gomodguard`: fix problem where duplicate issues were reported
+   * `gosec`: from 2.7.0 to 2.8.0
+   * `govet`: fix `sigchanyzer`
+   * `govet`: Update vet passes
+   * `importas`: allow repeated aliases
+   * `importas`: bump to HEAD
+   * `makezero`: bump to HEAD
+   * `nolintlint`: fix false positive
+   * `revive`: convert hard coded excludes into default exclude patterns
+   * `revive`: fix add-constant rule support
+   * `revive`: fix excludes
+   * `revive`: from 1.0.6 to 1.0.7
+   * `revive`: improve 'exported' rule output
+   * `rowserrcheck`: bump to v1.1.0
+   * `staticcheck`: configuration for `staticcheck`, `gosimple`, `stylecheck`
+   * `staticcheck`: from 0.1.3 to 0.1.4
+   * `staticcheck`: from v0.1.4 to v0.2.0
+   * `wastedassign`: from 0.2.0 to 1.0.0
+   * `wastedassign`: from 1.0.0 to v2.0.6
+   * `wrapcheck`: from 1.2.0 to 2.1.0
+3. documentation:
+   * improve linters page
+   * `exhaustivestruct` example explanation
+   * fix pattern of `forbidigo` in example config yaml
+   * bump documentation dependencies
+   * fix typos
+4. Misc:
+   * set the minimum Go version to go1.15
+   * non-zero exit code when a linter produces a panic
+
+### April 2021
+
+1. new linters:
+   * `tagliatelle`: https://github.com/ldez/tagliatelle
+   * `promlinter`: https://github.com/yeya24/promlinter
+2. update linters:
+   * `godot`: from 1.4.4 to 1.4.6
+   * `wrapcheck`: from 1.0.0 to 1.2.0
+   * `go-mnd`: from 2.3.1 to 2.3.2
+   * `wsl`: from 3.2.0 to 3.3.0
+   * `revive`: from 1.0.5 to 1.0.6
+   * `importas`: bump to HEAD
+   * `staticcheck`: configurable Go version
+   * `gosec`: add configuration
+   * `typecheck`: improve error stack parsing
+3. documentation:
+   * bump documentation dependencies
+   * fix typos
+4. Misc:
+   * fix: comma in exclude pattern leads to unexpected results
+
+### March 2021
+
+1. new linters:
+   * `gomoddirectives`: https://github.com/ldez/gomoddirectives
+2. update linters:
+   * `go-critic`: from 0.5.4 to 0.5.5
+   * `gofumpt`: from v0.1.0 to v0.1.1
+   * `gosec`: from 2.6.1 to 2.7.0
+   * `ifshort`: bump to v1.0.2
+   * `importas`: bump to HEAD
+   * `makezero`: bump to HEAD
+   * `nolintlint`: allow to fix //nolint lines
+   * `revive`: from 1.0.3 to 1.0.5
+   * `revive`: the default configuration is only applied when no dedicated configuration
+   * `rowserrcheck`: bump to HEAD
+   * ⚠ `scopelint`: deprecated
+   * `staticcheck`: from v0.1.2 (2020.2.2) to v0.1.3 (2020.2.3)
+   * 🎉 `typecheck`: display compilation errors as report instead of error
+   * `wastedassign`: bump to v0.2.0
+   * `wrapcheck`: bump to v1.0.0
+3. documentation:
+   * improve [linters page](https://golangci-lint.run/usage/linters/) (versions, deprecation, and presets)
+   * add [cache directory](https://golangci-lint.run/usage/configuration/#cache) information
+   * adding missing format options
+   * fix typos
+4. Misc:
+   * Set `version` command output to Stdout
+   * fix linters load mode
+   * Restore fast linters meaning
+
+### February 2021
 
 1. new linters:
    * `durationcheck`: https://github.com/charithe/durationcheck
    * `revive`: https://github.com/mgechev/revive
    * `cyclop`: https://github.com/bkielbasa/cyclop
+   * `wastedassign`: https://github.com/sanposhiho/wastedassign
+   * `importas`: https://github.com/julz/importas
+   * `nilerr`: https://github.com/gostaticanalysis/nilerr
+   * `forcetypeassert`: https://github.com/gostaticanalysis/forcetypeassert
+   * `govet`: add `stringintconv` and `ifaceassert`
 2. update linters:
-   * prealloc: Use upstream version
-   * Use upstream gocyclo
+   * `prealloc`: Use upstream version
+   * `errcheck`: Use upstream version
+   * `ineffassign`: Use upstream version
+   * `gocyclo`: Use upstream version
    * `godot` from 1.3.2 to 1.4.3
    * `exhaustivestruct` from 1.1.0 to 1.2.0
    * `forbidigo` from 1.0.0 to 1.1.0
    * `thelper` from 0.2.1 to 0.3.1
    * `ruleguard`: print error message and exit with non-zero status when parsing error occurs
    * fix wrong load mode for `asciicheck`, `exhaustivestruct`, `exportloopref`, and `makezero`
+   * `wsl`: bump to v3.2.0
+   * `durationcheck`: from 0.0.4 to 0.0.6
+   * `staticcheck`: from 2020.1.6 to v0.1.2 (2020.2.2)
+   * `thelper` from 0.3.1 to 0.4.0
+   * `bodyclose`: bump to HEAD
+   * `go-err113`: bump to HEAD
+   * ⚠ `interfacer`: deprecated
+   * ⚠ `maligned`: deprecated (govet `fieldalignment` as replacement)
+   * `govet`: use same default linter as go vet
+   * `go-printf-func-name`: to `v0.0.0-20200119135958-7558a9eaa5af`
+   * `godox`: to `v0.0.0-20210227103229-6504466cf951`
+   * `asciicheck`: to `v0.0.0-20200416200610-e657995f937b`
+   * `wrapcheck`: to `v0.0.0-20201130113247-1683564d9756`
+   * `unparam`: to `v0.0.0-20210104141923-aac4ce9116a7`
 3. CLI: truncate multiline descriptions
 4. fix: new-from-rev for a large repository
-5. use go1.16 to create binaries 
-6. fix: MIPS release
-7. documentation:
+5. Support RelatedInformation for analysis Diagnostic
+6. use go1.16 to create binaries 
+7. fix: MIPS release
+8. documentation:
    * bump documentation dependencies
+   * fix `go-header` usage
+   * improve `gocritic` description
+   * update deprecated hyperlink for Sublime Text plugin
+   * add docs on using homebrew tap
 
-## January 2021
+### January 2021
 
 1. new linters:
    * `predeclared`: https://github.com/nishanths/predeclared
@@ -43,7 +177,7 @@ There is the most valuable changes log:
 4. documentation:
    * bump documentation dependencies
 
-## December 2020
+### December 2020
 
 1. new linters:
    * `forbidigo`: https://github.com/ashanbrown/forbidigo

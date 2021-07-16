@@ -91,7 +91,7 @@ func TestTimeoutInConfig(t *testing.T) {
 
 func TestTestsAreLintedByDefault(t *testing.T) {
 	testshared.NewLintRunner(t).Run(getTestDataDir("withtests")).
-		ExpectHasIssue("`if` block ends with a `return`")
+		ExpectHasIssue("don't use `init` function")
 }
 
 func TestCgoOk(t *testing.T) {
@@ -337,9 +337,9 @@ func TestPathPrefix(t *testing.T) {
 	} {
 		t.Run(tt.Name, func(t *testing.T) {
 			testshared.NewLintRunner(t).Run(
-				append(tt.Args, getTestDataDir("withtests"))..., //nolint:scopelint
+				append(tt.Args, getTestDataDir("withtests"))...,
 			).ExpectOutputRegexp(
-				tt.Pattern, //nolint:scopelint
+				tt.Pattern,
 			)
 		})
 	}

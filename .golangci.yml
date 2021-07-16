@@ -34,8 +34,6 @@ linters-settings:
     min-complexity: 15
   goimports:
     local-prefixes: github.com/golangci/golangci-lint
-  golint:
-    min-confidence: 0
   gomnd:
     settings:
       mnd:
@@ -63,8 +61,6 @@ linters-settings:
     require-specific: false # don't require nolint directives to be specific about which linter is being skipped
 
 linters:
-  # please, do not use `enable-all`: it's deprecated and will be removed soon.
-  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
   disable-all: true
   enable:
     - bodyclose
@@ -73,6 +69,7 @@ linters:
     - dogsled
     - dupl
     - errcheck
+    - exportloopref
     - exhaustive
     - funlen
     - gochecknoinits
@@ -81,7 +78,6 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - golint
     - gomnd
     - goprintffuncname
     - gosec
@@ -94,7 +90,6 @@ linters:
     - noctx
     - nolintlint
     - rowserrcheck
-    - scopelint
     - staticcheck
     - structcheck
     - stylecheck
@@ -107,6 +102,7 @@ linters:
 
   # don't enable:
   # - asciicheck
+  # - scopelint
   # - gochecknoglobals
   # - gocognit
   # - godot
@@ -127,29 +123,24 @@ issues:
       linters:
         - gomnd
 
-    # https://github.com/go-critic/go-critic/issues/926
-    - linters:
-        - gocritic
-      text: "unnecessaryDefer:"
+    - path: pkg/golinters/errcheck.go
+      text: "SA1019: errCfg.Exclude is deprecated: use ExcludeFunctions instead"
+    - path: pkg/commands/run.go
+      text: "SA1019: lsc.Errcheck.Exclude is deprecated: use ExcludeFunctions instead"
 
-    # TODO temporary rule, must be removed
-    # seems related to v0.34.1, but I was not able to reproduce locally,
-    # I was also not able to reproduce in the CI of a fork,
-    # only the golangci-lint CI seems to be affected by this invalid analysis.
-    - path: pkg/golinters/scopelint.go
-      text: 'directive `//nolint:interfacer` is unused for linter interfacer'
+    # TODO must be removed after the release of the next version (v1.41.0)
+    - path: pkg/commands/run.go
+      linters:
+        - gomnd
+    # TODO must be removed after the release of the next version (v1.41.0)
+    - path: pkg/golinters/nolintlint/nolintlint.go
+      linters:
+        - gomnd
+    # TODO must be removed after the release of the next version (v1.41.0)
+    - path: pkg/printers/tab.go
+      linters:
+        - gomnd
 
-    # TODO temporary rule, must be removed
-    # related to https://github.com/golangci/golangci-lint/pull/1756
-    # must be replaced by '//nolint:staticcheck // require changes in github.com/OpenPeeDeeP/depguard'
-    - path: pkg/golinters/depguard.go
-      text: 'SA1019: package golang.org/x/tools/go/loader is deprecated'
-
-    # TODO temporary rule, must be removed
-    # related to https://github.com/golangci/golangci-lint/pull/1756
-    # must be replaced by '///nolint:staticcheck // it's an adapter for golang.org/x/tools/go/packages'
-    - path: pkg/golinters/goanalysis/adapters.go
-      text: 'SA1019: package golang.org/x/tools/go/loader is deprecated'
 
 run:
   skip-dirs:
@@ -157,10 +148,3 @@ run:
     - internal/cache
     - internal/renameio
     - internal/robustio
-
-# golangci.com configuration
-# https://github.com/golangci/golangci/wiki/Configuration
-service:
-  golangci-lint-version: 1.23.x # use the fixed version to not introduce new linters unexpectedly
-  prepare:
-    - echo "here I can run custom commands, but no preparation needed for this repo"
